@@ -1,34 +1,34 @@
-import os
-import pickle
-import pandas as pd
-
 import torch
+from torch_geometric.data import Data
 
-from torch_geometric.data import Data, DataLoader
-from Route_to_input import get_edge_features_from_instance, get_adj_matrix_from_solutions, \
-    get_node_features_from_instance, get_example_solutions, get_route_instance
+from typing import Tuple
+from torch import Tensor
+from utils.solution_to_model import solutions_to_model, get_example_solutions, get_route_instance
 from Models import SREXmodel
 
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device('cpu')
 
-node_features_m = get_node_features_from_instance()
-edge_features_m = get_edge_features_from_instance()
-edge_m1, edge_m2 = get_adj_matrix_from_solutions(get_example_solutions())
-num_routes = get_example_solutions()[0].num_routes()
+instance = get_route_instance()
+parents = get_example_solutions()
 
-edge_index = edge_m1.nonzero().t()
-row, col = edge_index
-edge_weight = edge_features_m[row, col]
+parent1, parent2, client_features = solutions_to_model(instance, parents)
 
 
-data = Data(x=node_features_m, edge_index=edge_index, edge_attr=edge_weight)
-data.num_routes = num_routes
-print(data.is_directed())
-print(data)
+class GraphData(Data):
+
+    def __init__(self, parent_input: Tuple[Tensor, Tensor, Tensor], client_features: Tensor):
+        client_route_vector, edge_index, edge_weight, num_routes = parent_input
+        super().__init__(x=client_features, edge_index=edge_index, edge_attr=edge_weight)
+        self.num_routes = num_routes
+        self.client_route_vector = client_route_vector
+
+
+parent2_data = GraphData(parent_input=parent2, client_features=client_features)
+parent1_data = GraphData(parent_input=parent1, client_features=client_features)
 
 model = SREXmodel(num_node_features=6, hidden_dim=16, max_routes_to_swap=50, num_heads=6, dropout=0.2)
 model.train()
 
-result = model(data, data)
+result = model(parent1_data, parent2_data)
 
 print(result.shape)
