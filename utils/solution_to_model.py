@@ -1,5 +1,5 @@
 import os
-from pyvrp import read, Solution
+from pyvrp import read, Solution, ProblemData
 import vrplib
 import numpy as np
 from typing import Tuple
@@ -17,21 +17,19 @@ def get_route_instance():
     return instance
 
 
-def get_node_features_from_instance():
+def get_node_features_from_instance(route_instance: ProblemData):
     client_features = []
-    instance = get_route_instance()
 
-    for client_nr in range(instance.num_clients + 1):
-        client = instance.client(client_nr)
+    for client_nr in range(route_instance.num_clients + 1):
+        client = route_instance.client(client_nr)
         client_features.append(
             [client.x, client.y, client.tw_late, client.tw_early, client.demand, client.service_duration])
 
     return torch.tensor(client_features, dtype=torch.float)
 
 
-def get_edge_features_from_instance():
-    instance = get_route_instance()
-    return torch.tensor(instance.distance_matrix())
+def get_edge_features_from_instance(route_instance: ProblemData):
+    return torch.tensor(route_instance.distance_matrix())
 
 
 def get_pyvrp_solutions(route1, route2):
@@ -125,7 +123,6 @@ def get_example_solutions():
 def get_adj_matrix_from_solutions(solutions: Tuple[Solution, Solution]):
     solution1, solution2 = solutions
     num_nodes = len(solution1.get_neighbours())
-    # num_nodes = 5
     neighbours1 = solution1.get_neighbours()
     neighbours2 = solution2.get_neighbours()
     graph_edge_matrix_sol1 = np.zeros(shape=(num_nodes, num_nodes), dtype="int64")
@@ -146,4 +143,47 @@ def get_adj_matrix_from_solutions(solutions: Tuple[Solution, Solution]):
 
 
 def get_client_to_route_vector(solution: Solution):
-    solution.num_clients()
+    vector = np.zeros(shape=(solution.num_clients() + 1))
+    route_nr = 0
+
+    for route in solution.get_routes():
+        for client in route:
+            vector[client] = route_nr
+
+        route_nr += 1
+
+    return torch.tensor(vector, dtype=torch.int)
+
+
+def solutions_to_model(route_instance: ProblemData, parents: Tuple[Solution, Solution]):
+    sol1, sol2 = parents
+
+    # client_to_route_vectors:
+    sol1_client_route_vector = get_client_to_route_vector(sol1)
+    sol2_client_route_vector = get_client_to_route_vector(sol2)
+
+    # edge_index: adjacency matrix of solution -> edge_index(COO format)
+    adj_sol1, adj_sol2 = get_adj_matrix_from_solutions(parents)
+    sol1_edge_index = adj_sol1.nonzero().t()
+    sol2_edge_index = adj_sol2.nonzero().t()
+
+    # x
+    client_features = get_node_features_from_instance(route_instance)
+
+    # edge_attr
+    edge_features = get_edge_features_from_instance(route_instance)
+    ## parent1
+    row, col = sol1_edge_index
+    sol1_edge_weight = edge_features[row, col]
+    ## parent2
+    row2, col2 = sol2_edge_index
+    sol2_edge_weight = edge_features[row2, col2]
+
+    # total number of routes
+    sol1_num_routes = sol1.num_routes()
+    sol2_num_routes = sol2.num_routes()
+
+    sol1_input = (sol1_client_route_vector, sol1_edge_index, sol1_edge_weight, sol1_num_routes)
+    sol2_input = (sol2_client_route_vector, sol2_edge_index, sol2_edge_weight, sol2_num_routes)
+
+    return sol1_input, sol2_input, client_features
