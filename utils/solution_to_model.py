@@ -7,7 +7,7 @@ import torch
 
 
 def get_route_instance():
-    instance_name = 'X-n439-k37'
+    instance_name = 'solutions'
     instance = read(f"./data/{instance_name}/{instance_name}.vrp", round_func='round')
     instance_bks = vrplib.read_solution(f"./data/{instance_name}/{instance_name}.sol")
     instance.client(1).tw_late
