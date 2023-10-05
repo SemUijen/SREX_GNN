@@ -96,9 +96,7 @@ class SolutionTransformer:
         # total number of routes
         num_routes = solution.num_routes()
 
-        sol1_input = (client_route_vector, edge_index, edge_weight, num_routes)
-
-        return sol1_input
+        return client_route_vector, edge_index, edge_weight, num_routes
 
     def full_graph_to_input(self, instance: ProblemData):
 
@@ -112,23 +110,22 @@ class SolutionTransformer:
 
         edge_index = fully_connected.nonzero().t()
 
-        full_graph_input = (edge_index, edge_weight)
-        return full_graph_input, client_features
+        return edge_index, edge_weight, client_features
 
     def __call__(self, instance_name: str, get_full_graph: bool, parent_route: List[List[int]] = None):
 
         if get_full_graph:
             instance = self.get_instance(instance_name=instance_name)
-            graph_input, client_features = self.full_graph_to_input(instance)
-            return graph_input, client_features
+            edge_index, edge_weight, client_features = self.full_graph_to_input(instance)
+            return edge_index, edge_weight, client_features
 
         else:
             if parent_route:
                 instance = self.get_instance(instance_name=instance_name)
                 solution = self.route_to_solutions_object(route=parent_route, instance=instance)
 
-                GraphData_input = self.solution_to_input(instance=instance, solution=solution)
-                return GraphData_input
+                client_route_vector, edge_index, edge_weight, num_routes = self.solution_to_input(instance=instance, solution=solution)
+                return client_route_vector, edge_index, edge_weight, num_routes
 
             else:
                 raise "Solution Transformer Expects a Route"

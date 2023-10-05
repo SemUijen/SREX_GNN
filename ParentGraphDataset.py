@@ -9,11 +9,9 @@ from GraphData import FullGraph, ParentGraph
 from data.utils import SolutionTransformer
 
 
-# from GraphDataLoader import GraphData
-
-
 class ParentGraphsDataset(Dataset):
-    def __init__(self, root: str, is_processed: bool, pre_transform: SolutionTransformer = SolutionTransformer(),
+    def __init__(self, root: str, is_processed: bool = False,
+                 pre_transform: SolutionTransformer = SolutionTransformer(),
                  transform=None, pre_filter=None):
         self.processed_files = []
         self.is_processed = is_processed
@@ -45,8 +43,10 @@ class ParentGraphsDataset(Dataset):
                 route_instance = raw_data['route_instance']
                 file_name = f'FullGraph_{idx}.pt'
                 if self.pre_transform:
-                    graph_input, client_features = self.pre_transform(instance_name=route_instance, get_full_graph=True)
-                    data = FullGraph(graph_input, client_features)
+                    edge_index, edge_weight, client_features = self.pre_transform(instance_name=route_instance,
+                                                                                  get_full_graph=True)
+
+                    data = FullGraph(edge_index, edge_weight, client_features)
                     torch.save(data, osp.join(self.processed_dir, file_name))
 
                 # for getter function #TODO: fix something better works for now
@@ -64,9 +64,11 @@ class ParentGraphsDataset(Dataset):
                 for data in raw_data["parent_routes"]:
 
                     if self.pre_transform:
-                        graph_input = self.pre_transform(instance_name=route_instance, get_full_graph=False,
-                                                         parent_route=data)
-                        data = ParentGraph(graph_input, client_features)
+                        client_route_vector, edge_index, edge_weight, num_routes = self.pre_transform(
+                            instance_name=route_instance, get_full_graph=False,
+                            parent_route=data)
+
+                        data = ParentGraph(client_route_vector, edge_index, edge_weight, num_routes, client_features)
                         file_name = f'ParentGraphs_{idx}.pt'
                         self.processed_files.append(file_name)
                         torch.save(data, osp.join(self.processed_dir, file_name))
@@ -76,14 +78,18 @@ class ParentGraphsDataset(Dataset):
                         raise "No pre_transform"
 
     def len(self) -> int:
-        return len(self.processed_file_names)
+        return len(self.parent_couple_idx)
 
-    # TODO: fix get function
     def get(self, idx):
-        data = torch.load(osp.join(self.processed_dir, f'ParentGraphs_{idx}.pt'))
-        return data
+        print(idx)
+        p1_idx, p2_idx = self.parent_couple_idx[idx]
+        instance_idx = self.instance_idx[idx]
 
+        p1_data = torch.load(osp.join(self.processed_dir, f'ParentGraphs_{p1_idx}.pt'))
+        p2_data = torch.load(osp.join(self.processed_dir, f'ParentGraphs_{p2_idx}.pt'))
 
-dataset = ParentGraphsDataset(root="C:/SREX_GNN/data/test_case", is_processed=False)
+        full_graph_data = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
+        label = torch.load(osp.join(self.processed_dir, f'labels_{instance_idx}.pt'))
 
-
+        print('hello ', p1_data)
+        return p1_data, p2_data, full_graph_data, torch.tensor(label[idx])
