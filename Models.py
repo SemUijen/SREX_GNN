@@ -5,7 +5,7 @@ from torch_geometric.data import Data
 
 class SREXmodel(nn.Module):
 
-    def __init__(self, num_node_features: int, hidden_dim: int, max_routes_to_swap: int, num_heads:int, dropout: float):
+    def __init__(self, num_node_features: int, hidden_dim: int = 64, max_routes_to_swap: int = 60, num_heads: int = 8, dropout: float = 0.2):
         super(SREXmodel, self).__init__()
 
         self.num_node_features = num_node_features
@@ -17,7 +17,7 @@ class SREXmodel(nn.Module):
         # the NN learning the representation of Parent solutions with Node = Customer
         self.GAT_SolutionGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim, heads=self.num_heads, dropout=self.dropout)
 
-        self.route_combination_head = nn.Linear(2 * self.num_node_features * self.hidden_dim, self.max_routes_to_swap + 1)
+        self.route_combination_head = nn.Linear(2 * self.num_heads * self.hidden_dim, self.max_routes_to_swap + 1)
 
     def forward(self, parent1_data: Data, parent2_data: Data):
         # TODO: torch_geometric has a dataloader that can work with Batches
@@ -57,13 +57,12 @@ class SREXmodel(nn.Module):
         # Route_combination_head
         a, b = torch.broadcast_tensors(P1_route_aggregating[:, None], P2_route_aggregating[None, :])
         parent_route_combination_representations = torch.cat((a, b), -1)
-        print(parent_route_combination_representations.shape)
         full_prediction = self.route_combination_head(parent_route_combination_representations)
 
          # Soft_MAX
         # Actual size of the allowed matrix =  (P1_number_of_routes, P2_number_of_routes, max_to_swap)
         max_to_swap = min(P1_number_of_routes, P2_number_of_routes)
-        logits = full_prediction[:P1_number_of_routes, :P2_number_of_routes, :max_to_swap + 1]
-        #probs = torch.softmax(logits.flatten(), -1).view_as(logits)
+        logits = full_prediction[:P1_number_of_routes, :P2_number_of_routes, :max_to_swap - 1]
+        probs = torch.softmax(logits.flatten(), -1).view_as(logits)
 
-        return logits
+        return probs
