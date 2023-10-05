@@ -1,3 +1,5 @@
 torch
 torch_geometric
 pyvrp
+jupyter
+jupyterlab
