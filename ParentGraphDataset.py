@@ -40,7 +40,7 @@ class ParentGraphsDataset(Dataset):
                 raw_data = self.read_pickle(raw_path)
 
                 # process_whole_graph
-                route_instance = raw_data['route_instance']
+                route_instance = raw_data['route_instance_name']
                 file_name = f'FullGraph_{idx}.pt'
                 if self.pre_transform:
                     edge_index, edge_weight, client_features = self.pre_transform(instance_name=route_instance,
