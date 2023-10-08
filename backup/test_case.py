@@ -63,3 +63,42 @@ print('Output: ', probs.shape, probs.sum())
 highest_prob = probs.max()
 SREX_param = torch.where(probs == highest_prob)
 print(f"best SrexParams: P1x = {SREX_param[0].item()}, P2x = {SREX_param[1].item()}, NumRoutesMove = {SREX_param[2].item()}")
+
+"""
+    embedding1 = torch.ones(8,64)
+    embedding2 = torch.ones(8,68)
+
+    emb_stack = torch.stack((embedding1, embedding2))
+    print("emb: ", emb_stack.shape)
+    ## Parent 2
+    P2_Cnode_to_route = torch.tensor([[0,0,0,1,1,2,3,3], [0,1,1,1,1,2,2,3]])
+    print(P2_Cnode_to_route.shape)
+    P2_node_to_route_matrix = torch.zeros(2, 8, 4)
+
+    batchsize = P2_Cnode_to_route.shape[0]
+    for i in range(batchsize):
+        P2_node_to_route_matrix[i, torch.arange(8), P2_Cnode_to_route[i]] = 1
+
+    P2_route_aggregating = torch.matmul(P2_node_to_route_matrix[0].t(), embedding1)
+    print(P2_route_aggregating)
+    result = torch.einsum('abcd, abcd->abcd', P2_node_to_route_matrix.t(), emb_stack)
+    print(result.shape)
+    print(result)
+
+    #P2_node_to_route_matrix[torch.arange(number_of_customers), P1_Cnode_to_route] = 1
+    #P1_route_aggregating = torch.matmul(P1_node_to_route_matrix.t(), P1_emmbedding)
+    # batch matrix multiplication
+    As = torch.ones(3, 3, 3)
+    Bs = torch.ones(3, 3, 3) * 6
+    print(Bs)
+    sA = torch.ones(3, 3, 3) * 7
+    sB = torch.ones(3, 3, 3) * 6
+
+    batch = torch.stack((As, Bs))
+    m_batch = torch.stack((sA,sB))
+    print("Batch", batch.shape)
+
+
+    result = torch.einsum('abcd, abcd->abcd', batch, m_batch)
+    print(result.shape)
+    print(result)"""

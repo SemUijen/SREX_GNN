@@ -81,7 +81,6 @@ class ParentGraphsDataset(Dataset):
         return len(self.parent_couple_idx)
 
     def get(self, idx):
-        print(idx)
         p1_idx, p2_idx = self.parent_couple_idx[idx]
         instance_idx = self.instance_idx[idx]
 
@@ -91,5 +90,4 @@ class ParentGraphsDataset(Dataset):
         full_graph_data = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
         label = torch.load(osp.join(self.processed_dir, f'labels_{instance_idx}.pt'))
 
-        print('hello ', p1_data)
         return p1_data, p2_data, full_graph_data, torch.tensor(label[idx])
