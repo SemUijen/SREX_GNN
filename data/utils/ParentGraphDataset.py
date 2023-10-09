@@ -35,7 +35,7 @@ class ParentGraphsDataset(Dataset):
         return raw_data
 
     def transform_labels(self, labels):
-        # TODO: look at padding options
+        # TODO: look at padding options (current is zeropadding)
         labels_transformed = []
         for label in labels:
             x, y, z = label.shape

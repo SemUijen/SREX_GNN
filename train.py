@@ -7,7 +7,6 @@ from torch import softmax
 def train_model(model, device, trainloader, optimizer, loss_func):
     print(f'Training on {len(trainloader)} samples.....')
     model.train()
-    scheduler = MultiStepLR(optimizer, milestones=[1, 5], gamma=0.5)
     for count, (p1_data, p2_data, full_graph_data, label) in enumerate(trainloader):
         p1_data = p1_data.to(device)
         p2_data = p2_data.to(device)
@@ -17,7 +16,6 @@ def train_model(model, device, trainloader, optimizer, loss_func):
         loss = loss_func(output, soft_max_label)
         loss.backward()
         optimizer.step()
-    scheduler.step()
     # TODO: create accuracy functions: Absolute vs Current SREX
     return loss
 
