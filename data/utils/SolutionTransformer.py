@@ -112,7 +112,7 @@ class SolutionTransformer:
 
         return edge_index, edge_weight, client_features
 
-    def __call__(self, instance_name: str, get_full_graph: bool, parent_route: List[List[int]] = None):
+    def __call__(self, instance_name: str, get_full_graph: bool, parent_solution: Solution = None):
 
         if get_full_graph:
             instance = self.get_instance(instance_name=instance_name)
@@ -120,11 +120,11 @@ class SolutionTransformer:
             return edge_index, edge_weight, client_features
 
         else:
-            if parent_route:
+            if parent_solution:
                 instance = self.get_instance(instance_name=instance_name)
-                solution = self.route_to_solutions_object(route=parent_route, instance=instance)
+                #solution = self.route_to_solutions_object(route=parent_route, instance=instance)
 
-                client_route_vector, edge_index, edge_weight, num_routes = self.solution_to_input(instance=instance, solution=solution)
+                client_route_vector, edge_index, edge_weight, num_routes = self.solution_to_input(instance=instance, solution=parent_solution)
                 return client_route_vector, edge_index, edge_weight, num_routes
 
             else:
