@@ -105,4 +105,4 @@ class ParentGraphsDataset(Dataset):
         full_graph_data = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
         label = torch.load(osp.join(self.processed_dir, f'labels_{instance_idx}.pt'))
 
-        return p1_data, p2_data, full_graph_data, torch.tensor(label[idx])
+        return p1_data, p2_data, full_graph_data, torch.tensor(label[idx], dtype=torch.float)
