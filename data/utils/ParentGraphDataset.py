@@ -42,6 +42,8 @@ class ParentGraphsDataset(Dataset):
             transformed_label = np.pad(label, pad_width=(
             (0, self.label_shape - x), (0, self.label_shape - y), (0, self.label_shape - z - 1)))
 
+            # TODO: REMOVE below (data gathering mistake)
+            transformed_label = np.multiply(transformed_label, -1)
             labels_transformed.append(transformed_label)
 
         return labels_transformed
