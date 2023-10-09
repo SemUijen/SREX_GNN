@@ -1,36 +1,50 @@
 import os.path as osp
 import pickle
-from typing import Union, List, Tuple, Callable
+from typing import Union, List, Tuple
+import numpy as np
 
 import torch
-from torch import Tensor
 from torch_geometric.data import Dataset
-from GraphData import FullGraph, ParentGraph
+from data.utils.GraphData import FullGraph, ParentGraph
 from data.utils import SolutionTransformer
 
 
 class ParentGraphsDataset(Dataset):
-    def __init__(self, root: str, is_processed: bool = False,
+    def __init__(self, root: str, label_shape: int, is_processed: bool = False,
                  pre_transform: SolutionTransformer = SolutionTransformer(),
                  transform=None, pre_filter=None):
         self.processed_files = []
         self.is_processed = is_processed
         self.parent_couple_idx = []
         self.instance_idx = []
+        self.label_shape = label_shape
         super().__init__(root, transform, pre_transform, pre_filter)
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ["X-n439-k37_TestSet_v2.pkl"]
+        return ["X-n439-k37_rawdata.pkl"]
 
     @property
     def processed_file_names(self) -> Union[str, List[str], Tuple]:
         return self.processed_files
 
-    def read_pickle(self, raw_path):
+    @staticmethod
+    def read_pickle(raw_path):
         with open(raw_path, "rb") as file:
             raw_data = pickle.load(file)
         return raw_data
+
+    def transform_labels(self, labels):
+        # TODO: look at padding options
+        labels_transformed = []
+        for label in labels:
+            x, y, z = label.shape
+            transformed_label = np.pad(label, pad_width=(
+            (0, self.label_shape - x), (0, self.label_shape - y), (0, self.label_shape - z - 1)))
+
+            labels_transformed.append(transformed_label)
+
+        return labels_transformed
 
     def process(self) -> None:
         if not self.is_processed:
@@ -57,16 +71,17 @@ class ParentGraphsDataset(Dataset):
                 self.parent_couple_idx.extend(raw_data['parent_couple_idx'])
 
                 # save labels:
+                labels = self.transform_labels(raw_data["labels"])
                 file_name = f'labels_{idx}.pt'
-                torch.save(raw_data["labels"], osp.join(self.processed_dir, file_name))
+                torch.save(labels, osp.join(self.processed_dir, file_name))
 
                 idx += 1
-                for data in raw_data["parent_routes"]:
+                for solution in raw_data["parent_routes"]:
 
                     if self.pre_transform:
                         client_route_vector, edge_index, edge_weight, num_routes = self.pre_transform(
                             instance_name=route_instance, get_full_graph=False,
-                            parent_route=data)
+                            parent_solution=solution)
 
                         data = ParentGraph(client_route_vector, edge_index, edge_weight, num_routes, client_features)
                         file_name = f'ParentGraphs_{idx}.pt'
