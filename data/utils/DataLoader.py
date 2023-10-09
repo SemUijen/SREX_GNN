@@ -5,7 +5,7 @@ import torch
 from torch_geometric.loader import DataLoader
 from torch.utils.data import random_split
 
-from ParentGraphDataset import ParentGraphsDataset
+from data.utils.ParentGraphDataset import ParentGraphsDataset
 
 
 def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsize: int = 1, num_workers: int = 0) -> Tuple[DataLoader, DataLoader]:
@@ -19,6 +19,4 @@ def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsiz
 
     train_loader = DataLoader(dataset=train_set, batch_size=batchsize, num_workers=num_workers)
     test_loader = DataLoader(dataset=test_set, batch_size=batchsize, num_workers=num_workers)
-
-
     return train_loader, test_loader
