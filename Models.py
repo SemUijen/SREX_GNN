@@ -20,8 +20,12 @@ class SREXmodel(nn.Module):
         # the NN learning the representation of Parent solutions with Node = Customer
         self.GAT_SolutionGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
                                          heads=self.num_heads, dropout=self.dropout)
+        # TODO: add gat model for FULL Graph
 
+        # TODO: Add extra layers
         self.route_combination_head = nn.Linear(2 * self.num_heads * self.hidden_dim, self.max_routes_to_swap - 1)
+
+        self.softmax = nn.Softmax(dim=1)
 
     def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
         def transform(graph_data, embeddings):
@@ -36,6 +40,7 @@ class SREXmodel(nn.Module):
         batch_size = len(p1_graph_data)
         batch_indices = p1_graph_data.batch
         PtoP_embeddings = []
+
         for i in range(batch_size):
             p1_route_embedding = transform(p1_graph_data, p1_embeddings)
             p2_route_embedding = transform(p2_graph_data, p2_embeddings)
@@ -53,7 +58,6 @@ class SREXmodel(nn.Module):
         return PtoP_embeddings
 
     def forward(self, parent1_data: Data, parent2_data: Data):
-
         # get graph input for solution1
         P1_nodefeatures, P1_edge_index, P1_edgeFeatures = parent1_data.x, parent1_data.edge_index, parent1_data.edge_attr
         # get graph input for solution 2
@@ -76,7 +80,9 @@ class SREXmodel(nn.Module):
         # TODO Add extra linear layers
         full_prediction = self.route_combination_head(route_to_route_embeddings)
 
+
+        # TODO: Test softmax
         # Soft_MAX
-        probs = torch.softmax(full_prediction.flatten(), -1).view_as(full_prediction)
+        probs = self.softmax(full_prediction).view_as(full_prediction)
 
         return probs
