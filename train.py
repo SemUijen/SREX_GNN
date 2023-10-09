@@ -12,8 +12,8 @@ def train_model(model, device, trainloader, optimizer, loss_func):
         p2_data = p2_data.to(device)
         optimizer.zero_grad()
         output = model(p1_data, p2_data)
-        soft_max_label = softmax(label, -1, torch.float)
-        loss = loss_func(output, soft_max_label)
+        soft_max_label = softmax(label.flatten(start_dim=1, end_dim=3), -1, torch.float).view_as(label)
+        loss = loss_func(output.flatten(), soft_max_label.flatten())
         loss.backward()
         optimizer.step()
     # TODO: create accuracy functions: Absolute vs Current SREX
@@ -30,8 +30,7 @@ def test_model(model, device, testloader):
             p2_data = p2_data.to(device)
             output = model(p1_data, p2_data)
             # TODO: Test if softmax is done correctly
-            soft_max_label = softmax(label, -1, torch.float)
-
+            soft_max_label = softmax(label.flatten(start_dim=1, end_dim=3), -1, torch.float).view_as(label)
             predictions = torch.cat((predictions, output))
             labels = torch.cat((labels, soft_max_label))
 

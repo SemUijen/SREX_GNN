@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.nn import GATConv
 from torch_geometric.data import Data
-from torch.nn.functional import pad
+from torch.nn.functional import pad, softmax
 
 
 class SREXmodel(nn.Module):
@@ -25,7 +25,7 @@ class SREXmodel(nn.Module):
         # TODO: Add extra layers
         self.route_combination_head = nn.Linear(2 * self.num_heads * self.hidden_dim, self.max_routes_to_swap - 1)
 
-        self.softmax = nn.Softmax(dim=1)
+        self.softmax = nn.Softmax(dim=-1)
 
     def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
         def transform(graph_data, embeddings):
@@ -63,7 +63,6 @@ class SREXmodel(nn.Module):
         # get graph input for solution 2
         P2_nodefeatures, P2_edge_index, P2_edgeFeatures = parent2_data.x, parent2_data.edge_index, parent2_data.edge_attr
 
-
         # TODO: both embedding have no activation function yet: embedding = self.relu(embedding)?
         # Node(Customer) Embedding Parent1 (Current setup is without whole graph)
         P1_embedding = self.GAT_SolutionGraph(x=P1_nodefeatures.float(), edge_index=P1_edge_index,
@@ -78,9 +77,9 @@ class SREXmodel(nn.Module):
         # TODO Add extra linear layers
         full_prediction = self.route_combination_head(route_to_route_embeddings)
 
-
         # TODO: Test softmax
         # Soft_MAX
-        probs = self.softmax(full_prediction).view_as(full_prediction)
+        probs = self.softmax(full_prediction.flatten(start_dim=1, end_dim=3))
+        probs = probs.view_as(full_prediction)
 
         return probs

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import numpy as np
 from data.utils.DataLoader import get_train_test_loader
 from data.utils.ParentGraphDataset import ParentGraphsDataset
 
@@ -26,6 +26,6 @@ if __name__ == "__main__":
         train_loss = train_model(model, device, train_dataloader, optimizer, loss_func)
         test_pred, test_label = test_model(model, device, test_dataloader)
 
-        test_loss = loss_func(test_pred, test_label)
+        test_loss = loss_func(test_pred.flatten(), test_label.flatten())
         print(
             f'Epoch {epoch + 1} / {nr_epochs} [==============================] - train_loss : {train_loss} - test_loss : {test_loss}')
