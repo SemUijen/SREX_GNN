@@ -46,6 +46,10 @@ class SREXmodel(nn.Module):
             p2_route_embedding = transform(p2_graph_data, p2_embeddings)
 
             print(p1_route_embedding.shape)
+
+            # TODO: FULL Px1_Px2_nrRoutestoMove
+            # Current combination is getting having features for all 1 route against 1 route. But we want multiple routes agaings multtiple routes depending on SREX parameters
+            # changes this!
             a, b = torch.broadcast_tensors(p1_route_embedding[:, None], p2_route_embedding[None, :])
             parent_to_parent_embedding = torch.cat((a, b), -1)
             x, y, z = parent_to_parent_embedding.shape
