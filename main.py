@@ -28,9 +28,10 @@ if __name__ == "__main__":
     nr_epochs = 5
     for epoch in range(nr_epochs):
         train_loss = train_model(model, device, train_dataloader, optimizer, loss_func)
-        test_pred, test_label = test_model(model, device, test_dataloader)
 
-        test_loss = loss_func(test_pred.flatten(), test_label.flatten())
-        print(
-            f'Epoch {epoch + 1} / {nr_epochs} [==============================] - train_loss : {train_loss} - test_loss : {test_loss}')
+        #test_pred, test_label = test_model(model, device, test_dataloader)
+
+        #test_loss = loss_func(test_pred.flatten(), test_label.flatten())
+        #print(
+        #   f'Epoch {epoch + 1} / {nr_epochs} [==============================] - train_loss : {train_loss} - test_loss : {test_loss}')
 

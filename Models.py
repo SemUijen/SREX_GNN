@@ -45,6 +45,7 @@ class SREXmodel(nn.Module):
             p1_route_embedding = transform(p1_graph_data, p1_embeddings)
             p2_route_embedding = transform(p2_graph_data, p2_embeddings)
 
+            print(p1_route_embedding.shape)
             a, b = torch.broadcast_tensors(p1_route_embedding[:, None], p2_route_embedding[None, :])
             parent_to_parent_embedding = torch.cat((a, b), -1)
             x, y, z = parent_to_parent_embedding.shape
