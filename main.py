@@ -22,6 +22,8 @@ if __name__ == "__main__":
 
     # TODO: look at optimizers
     optimizer = torch.optim.SGD(model.parameters(), lr=0.00001)
+
+    #TODO: should loss be averaged over each parent combination ?(combinations have different sizes so absolute loss favors smaller instances)
     loss_func = nn.CrossEntropyLoss()
 
 
@@ -29,9 +31,8 @@ if __name__ == "__main__":
     for epoch in range(nr_epochs):
         train_loss = train_model(model, device, train_dataloader, optimizer, loss_func)
 
-        #test_pred, test_label = test_model(model, device, test_dataloader)
+        test_loss = test_model(model, device, test_dataloader, loss_func)
 
-        #test_loss = loss_func(test_pred.flatten(), test_label.flatten())
-        #print(
-        #   f'Epoch {epoch + 1} / {nr_epochs} [==============================] - train_loss : {train_loss} - test_loss : {test_loss}')
+        print(
+           f'Epoch {epoch + 1} / {nr_epochs} [==============================] - train_loss : {train_loss} - test_loss : {test_loss}')
 
