@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch_geometric.nn import GATConv
 from torch_geometric.data import Data
 from torch.nn.functional import pad, softmax
+from torch import Tensor
 
 
 class SREXmodel(nn.Module):
@@ -23,12 +24,14 @@ class SREXmodel(nn.Module):
         # TODO: add gat model for FULL Graph
 
         # TODO: Add extra layers
-        self.route_combination_head = nn.Linear(2 * self.num_heads * self.hidden_dim, self.max_routes_to_swap - 1)
+        self.fc1 = nn.Linear(2 * self.num_heads * self.hidden_dim, self.num_heads * self.hidden_dim)
+        self.fc2 = nn.Linear(self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim / 2))
+        self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 2), 1)
 
         self.softmax = nn.Softmax(dim=-1)
 
     def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
-        def transform(graph_data, embeddings):
+        def transform_to_route(graph_data, embeddings):
             node_to_route_vector = graph_data.client_route_vector[batch_indices == i]
             number_of_customers = len(node_to_route_vector)
             node_to_route_matrix = torch.zeros(number_of_customers, graph_data.num_routes[i])
@@ -36,31 +39,52 @@ class SREXmodel(nn.Module):
             route_embedding = torch.matmul(node_to_route_matrix.t(), embeddings[batch_indices == i])
             return route_embedding
 
+        def transform_to_nrRoutes(route_embeddings, max_move):
+            temp_tensor = []
+            nrRoutes_batch = []
+            for i1 in range(route_embeddings.shape[0]):
+                for i2 in range(1, max_move):
+                    # TODO: Sum mean? global pooling?
+
+                    if i1 + i2 > max_move:
+
+                        if i1 > max_move:
+                            indices = torch.arange(0, (i1 + i2) - max_move)
+                        else:
+                            indices = torch.cat((torch.arange(0, (i1 + i2) - max_move), torch.arange(i1, max_move)))
+
+                    else:
+                        indices = torch.arange(i1, i1 + i2)
+                    temp_tensor.append(torch.sum(route_embeddings[indices], -2))
+                    nrRoutes_batch.append(i2)
+
+            return torch.stack(temp_tensor), torch.tensor(nrRoutes_batch)
+
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
         batch_indices = p1_graph_data.batch
-        PtoP_embeddings = []
-
+        PtoP_embeddings = torch.Tensor()
+        PtoP_batch = torch.Tensor()
         for i in range(batch_size):
-            p1_route_embedding = transform(p1_graph_data, p1_embeddings)
-            p2_route_embedding = transform(p2_graph_data, p2_embeddings)
+            p1_route_embedding = transform_to_route(p1_graph_data, p1_embeddings)
+            p2_route_embedding = transform_to_route(p2_graph_data, p2_embeddings)
 
-            print(p1_route_embedding.shape)
+            max_to_move = min(p1_route_embedding.size(0), p2_route_embedding.size(0))
 
-            # TODO: FULL Px1_Px2_nrRoutestoMove
-            # Current combination is getting having features for all 1 route against 1 route. But we want multiple routes agaings multtiple routes depending on SREX parameters
-            # changes this!
-            a, b = torch.broadcast_tensors(p1_route_embedding[:, None], p2_route_embedding[None, :])
-            parent_to_parent_embedding = torch.cat((a, b), -1)
-            x, y, z = parent_to_parent_embedding.shape
-            padded_PtoP_embedding = pad(parent_to_parent_embedding,
-                                        pad=(0, 0, 0, self.max_routes_to_swap - y, 0, self.max_routes_to_swap - x),
-                                        mode='constant', value=0)
-            PtoP_embeddings.append(padded_PtoP_embedding)
+            p1_sum_of_routes, p1_Route_batch = transform_to_nrRoutes(p1_route_embedding, max_to_move)
+            p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
-        PtoP_embeddings = torch.stack(PtoP_embeddings)
+            full_matrix = torch.Tensor()
+            for NrRoutes_move in range(1, max_to_move):
+                a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
+                                               p2_sum_of_routes[p2_Route_batch == NrRoutes_move][None, :])
+                test = torch.cat((a, b), -1)
+                full_matrix = torch.cat((full_matrix, test.flatten(0, 1)))
 
-        return PtoP_embeddings
+            PtoP_embeddings = torch.cat((PtoP_embeddings, full_matrix))
+            PtoP_batch = torch.cat((PtoP_batch, torch.tensor([i] * full_matrix.size(0))))
+
+        return PtoP_embeddings, PtoP_batch
 
     def forward(self, parent1_data: Data, parent2_data: Data):
         # get graph input for solution1
@@ -76,15 +100,24 @@ class SREXmodel(nn.Module):
         # Node(Customer) Embedding Parent2 (Current setup is without whole graph)
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
 
-        route_to_route_embeddings = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
-                                                                                       P1_embedding, P2_embedding)
+        #node embeddings to PtoP_embeddings
+        PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
+                                                                                         P1_embedding, P2_embedding)
 
         # TODO Add extra linear layers
-        full_prediction = self.route_combination_head(route_to_route_embeddings)
+        # linear layers
+        out = self.fc1(PtoP_embeddings)
+        out = self.fc2(out)
+        full_prediction = self.head(out)
 
-        # TODO: Test softmax
+
         # Soft_MAX
-        probs = self.softmax(full_prediction.flatten(start_dim=1, end_dim=3))
-        probs = probs.view_as(full_prediction)
+        output_probs = torch.Tensor()
+        for batch in range(len(parent1_data)):
+            batch_predict = full_prediction[PtoP_batch == batch]
 
-        return probs
+            probs = self.softmax(batch_predict.flatten())
+
+            output_probs = torch.cat((output_probs, probs))
+
+        return output_probs, PtoP_batch
