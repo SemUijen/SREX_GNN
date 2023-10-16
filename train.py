@@ -7,31 +7,41 @@ from torch import softmax
 def train_model(model, device, trainloader, optimizer, loss_func):
     print(f'Training on {len(trainloader)} samples.....')
     model.train()
-    for count, (p1_data, p2_data, full_graph_data, label) in enumerate(trainloader):
+
+    for count, (p1_data, p2_data, full_graph_data, target) in enumerate(trainloader):
         p1_data = p1_data.to(device)
         p2_data = p2_data.to(device)
         optimizer.zero_grad()
-        output = model(p1_data, p2_data)
-        soft_max_label = softmax(label.flatten(start_dim=1, end_dim=3), -1, torch.float).view_as(label)
-        loss = loss_func(output.flatten(), soft_max_label.flatten())
+        output, batch = model(p1_data, p2_data)
+        loss = 0
+        # TODO: Average losses?
+        for i in range(len(p1_data)):
+            label = torch.tensor(target[i].label)
+            soft_max_label = softmax(label, 0, torch.float)
+            loss1 = loss_func(output[batch == i], soft_max_label)
+            loss += loss1
+
         loss.backward()
         optimizer.step()
+
     # TODO: create accuracy functions: Absolute vs Current SREX
     return loss
 
 
-def test_model(model, device, testloader):
+def test_model(model, device, testloader, loss_func):
     model.eval()
-    predictions = torch.Tensor()
+    loss = 0
     labels = torch.Tensor()
     with torch.no_grad():
-        for count, (p1_data, p2_data, full_graph_data, label) in enumerate(testloader):
+        for count, (p1_data, p2_data, full_graph_data, target) in enumerate(testloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
-            output = model(p1_data, p2_data)
-            # TODO: Test if softmax is done correctly
-            soft_max_label = softmax(label.flatten(start_dim=1, end_dim=3), -1, torch.float).view_as(label)
-            predictions = torch.cat((predictions, output))
-            labels = torch.cat((labels, soft_max_label))
+            output, batch = model(p1_data, p2_data)
 
-        return predictions, labels
+            for i in range(len(p1_data)):
+                label = torch.tensor(target[i].label)
+                soft_max_label = softmax(label, 0, torch.float)
+                loss1 = loss_func(output[batch==i], soft_max_label)
+                loss += loss1
+
+        return loss
