@@ -9,6 +9,11 @@ from data.utils.GraphData import FullGraph, ParentGraph
 from data.utils import SolutionTransformer
 
 
+class MyLabel:
+    def __init__(self, label):
+        self.label = label
+
+
 class ParentGraphsDataset(Dataset):
     def __init__(self, root: str, label_shape: int, is_processed: bool = False,
                  pre_transform: SolutionTransformer = SolutionTransformer(),
@@ -40,9 +45,18 @@ class ParentGraphsDataset(Dataset):
         for label in labels:
             x, y, z = label.shape
             transformed_label = np.pad(label, pad_width=(
-            (0, self.label_shape - x), (0, self.label_shape - y), (0, self.label_shape - z - 1)))
+                (0, self.label_shape - x), (0, self.label_shape - y), (0, self.label_shape - z - 1)))
 
             labels_transformed.append(transformed_label)
+
+        return labels_transformed
+
+    def flatten_labels(self, labels):
+        # TODO: look at padding options (current is zeropadding)
+        labels_transformed = []
+        for label in labels:
+            flattened_label = label.flatten()
+            labels_transformed.append(list(flattened_label))
 
         return labels_transformed
 
@@ -71,7 +85,7 @@ class ParentGraphsDataset(Dataset):
                 self.parent_couple_idx.extend(raw_data['parent_couple_idx'])
 
                 # save labels:
-                labels = self.transform_labels(raw_data["labels"])
+                labels = self.flatten_labels(raw_data["labels"])
                 file_name = f'labels_{idx}.pt'
                 torch.save(labels, osp.join(self.processed_dir, file_name))
 
@@ -103,6 +117,10 @@ class ParentGraphsDataset(Dataset):
         p2_data = torch.load(osp.join(self.processed_dir, f'ParentGraphs_{p2_idx}.pt'))
 
         full_graph_data = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
-        label = torch.load(osp.join(self.processed_dir, f'labels_{instance_idx}.pt'))
+        labels = torch.load(osp.join(self.processed_dir, f'labels_{instance_idx}.pt'))
 
-        return p1_data, p2_data, full_graph_data, torch.tensor(label[idx], dtype=torch.float)
+        # because of varying sizes of labels. The labels are put in dict so they can be stacked by dataloader
+
+        label = MyLabel(labels[idx])
+
+        return p1_data, p2_data, full_graph_data, label
