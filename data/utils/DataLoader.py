@@ -1,15 +1,105 @@
 import math
-from typing import Tuple
-
+from typing import Tuple, Sequence, Union, List, Optional, Union
 import torch
 from torch_geometric.loader import DataLoader
 from torch.utils.data import random_split
 
-from data.utils.ParentGraphDataset import ParentGraphsDataset
+from data.utils.ParentGraphDataset import ParentGraphsDataset, MyLabel
+
+from collections.abc import Mapping
+
+import torch.utils.data
+from torch.utils.data.dataloader import default_collate
+
+from torch_geometric.data import Batch, Dataset
+from torch_geometric.data.data import BaseData
+from torch_geometric.data.datapipes import DatasetAdapter
 
 
-def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsize: int = 1, num_workers: int = 0) -> Tuple[DataLoader, DataLoader]:
+class MyCollater:
+    def __init__(self, follow_batch, exclude_keys):
+        self.follow_batch = follow_batch
+        self.exclude_keys = exclude_keys
 
+    def __call__(self, batch):
+        elem = batch[0]
+
+        if isinstance(elem, BaseData):
+
+            return Batch.from_data_list(batch, self.follow_batch,
+                                        self.exclude_keys)
+        elif isinstance(elem, MyLabel):
+            return batch
+        elif isinstance(elem, torch.Tensor):
+            return default_collate(batch)
+        elif isinstance(elem, float):
+            return torch.tensor(batch, dtype=torch.float)
+        elif isinstance(elem, int):
+            return torch.tensor(batch)
+        elif isinstance(elem, str):
+            return batch
+        elif isinstance(elem, Mapping):
+            print(len(elem['labels']))
+            return {key: self([data[key] for data in batch]) for key in elem}
+        elif isinstance(elem, tuple) and hasattr(elem, '_fields'):
+            return type(elem)(*(self(s) for s in zip(*batch)))
+        elif isinstance(elem, Sequence) and not isinstance(elem, str):
+            return [self(s) for s in zip(*batch)]
+
+        raise TypeError(f'DataLoader found invalid type: {type(elem)}')
+
+    def collate(self, batch):  # pragma: no cover
+        # TODO Deprecated, remove soon.
+        return self(batch)
+
+
+class MyDataLoader(torch.utils.data.DataLoader):
+    r"""A data loader which merges data objects from a
+    :class:`torch_geometric.data.Dataset` to a mini-batch.
+    Data objects can be either of type :class:`~torch_geometric.data.Data` or
+    :class:`~torch_geometric.data.HeteroData`.
+
+    Args:
+        dataset (Dataset): The dataset from which to load the data.
+        batch_size (int, optional): How many samples per batch to load.
+            (default: :obj:`1`)
+        shuffle (bool, optional): If set to :obj:`True`, the data will be
+            reshuffled at every epoch. (default: :obj:`False`)
+        follow_batch (List[str], optional): Creates assignment batch
+            vectors for each key in the list. (default: :obj:`None`)
+        exclude_keys (List[str], optional): Will exclude each key in the
+            list. (default: :obj:`None`)
+        **kwargs (optional): Additional arguments of
+            :class:`torch.utils.data.DataLoader`.
+    """
+
+    def __init__(
+            self,
+            dataset: Union[Dataset, Sequence[BaseData], DatasetAdapter],
+            batch_size: int = 1,
+            shuffle: bool = False,
+            follow_batch: Optional[List[str]] = None,
+            exclude_keys: Optional[List[str]] = None,
+            **kwargs,
+    ):
+        # Remove for PyTorch Lightning:
+        kwargs.pop('collate_fn', None)
+
+        # Save for PyTorch Lightning < 1.6:
+        self.follow_batch = follow_batch
+        self.exclude_keys = exclude_keys
+
+        super().__init__(
+            dataset,
+            batch_size,
+            shuffle,
+            collate_fn=MyCollater(follow_batch, exclude_keys),
+            **kwargs,
+        )
+
+
+def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsize: int = 1, num_workers: int = 0) -> \
+        tuple[MyDataLoader, MyDataLoader]:
     size = len(dataset)
     train_size = math.floor(0.8 * size)
     test_size = size - train_size
@@ -17,6 +107,7 @@ def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsiz
     generator1 = torch.Generator().manual_seed(seed)
     train_set, test_set = random_split(dataset, [train_size, test_size], generator=generator1)
 
-    train_loader = DataLoader(dataset=train_set, batch_size=batchsize, num_workers=num_workers)
-    test_loader = DataLoader(dataset=test_set, batch_size=batchsize, num_workers=num_workers)
+    train_loader = MyDataLoader(dataset=train_set, batch_size=batchsize, num_workers=num_workers,
+                                collate_fn=MyCollater(None, None))
+    test_loader = MyDataLoader(dataset=test_set, batch_size=batchsize, num_workers=num_workers)
     return train_loader, test_loader
