@@ -12,12 +12,16 @@ class SolutionTransformer:
 
     @staticmethod
     def get_instance(instance_name: str) -> ProblemData:
-        instance = read(f"./data/routes/{instance_name}.vrp", round_func='round')
+        if  instance_name in ["R2_8_9", 'R1_4_10']:
+            instance = read(f"./data/routes/{instance_name}.vrp", round_func='round', instance_format="solomon")
+
+        else:
+            instance = read(f"./data/routes/{instance_name}.vrp", round_func='round')
 
         # TODO: Add instance type to ProblemData
         # if instance.type is not 'VRPTW':
         #     instance.client(1).tw_late
-        instance.client(1).tw_late
+
 
         return instance
 
