@@ -1,19 +1,16 @@
 from pprint import pprint
 import pickle
+import sys
 from itertools import permutations
-
-file_name = 'batch_812_rawdata.pkl'
+import numpy as np
+np.set_printoptions(threshold=sys.maxsize)
+file_name = 'batch_12_rawdata.pkl'
 with open(file_name, "rb") as file:
     results = pickle.load(file)
 
-print(results['parent_couple_idx'])
+a = results['labels'][6]
 
-list1 = [53,54,55,56]
-new = list(map(tuple, permutations(list1, r=2)))
+b = (np.where(a>0, a, 0))
 
-results['parent_couple_idx'] = new
+pprint(a[b.nonzero()])
 
-print(results['parent_couple_idx'])
-
-with open(file_name, "wb") as file:
-    pickle.dump(results, file)
