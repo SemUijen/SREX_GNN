@@ -129,7 +129,8 @@ dmypy.json
 .pyre/
 
 # data
-#data/
+data/test_case/processed/*
+!data/test_case/processed/.gitkeep
 
 
 # Pycharm IDE settings
