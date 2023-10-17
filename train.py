@@ -47,4 +47,4 @@ def test_model(model, device, testloader, loss_func):
                 loss += loss1
                 number_rows += 1
 
-        return loss / number_rows
+        return loss, loss / number_rows
