@@ -5,7 +5,7 @@ from torch_geometric.loader import DataLoader
 from torch.utils.data import random_split
 
 from data.utils.ParentGraphDataset import ParentGraphsDataset, MyLabel
-
+from data.utils.BatchSampler import GroupSampler
 from collections.abc import Mapping
 
 import torch.utils.data
@@ -107,7 +107,8 @@ def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsiz
     generator1 = torch.Generator().manual_seed(seed)
     train_set, test_set = random_split(dataset, [train_size, test_size], generator=generator1)
 
-    train_loader = MyDataLoader(dataset=train_set, batch_size=batchsize, num_workers=num_workers,
+    sampler = GroupSampler(data_length=len(train_set), batch_size=batchsize, group_size=12)
+    train_loader = MyDataLoader(dataset=train_set, batch_sampler=sampler, num_workers=num_workers,
                                 collate_fn=MyCollater(None, None))
     test_loader = MyDataLoader(dataset=test_set, batch_size=batchsize, num_workers=num_workers)
     return train_loader, test_loader
