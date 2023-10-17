@@ -27,7 +27,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
         optimizer.step()
 
     # TODO: create accuracy functions: Absolute vs Current SREX
-    return total_train_loss/number_of_rows
+    return total_train_loss, total_train_loss/number_of_rows
 
 
 def test_model(model, device, testloader, loss_func):
