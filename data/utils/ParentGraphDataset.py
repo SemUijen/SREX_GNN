@@ -24,6 +24,8 @@ class ParentGraphsDataset(Dataset):
         self.instance_idx = []
         self.label_shape = label_shape
         self.labels = []
+        self.accuracy = []
+        self.accuracy_limit = []
         super().__init__(root, transform, pre_transform, pre_filter)
 
     @property
@@ -89,12 +91,16 @@ class ParentGraphsDataset(Dataset):
                     InstanceIdx = [idx2] * len(raw_data["parent_couple_idx"])
                     self.instance_idx.extend(InstanceIdx)
 
+
                     # add couple labels
                     self.parent_couple_idx.extend(raw_data['parent_couple_idx'])
 
                     # save labels:
                     labels = self.flatten_labels(raw_data["labels"])
                     self.labels.extend(labels)
+
+                    self.accuracy.extend(raw_data["random_acc"])
+                    self.accuracy_limit.extend(raw_data["random_acc_limit"])
 
                     for solution in raw_data["parent_routes"][batch]:
 
@@ -130,3 +136,8 @@ class ParentGraphsDataset(Dataset):
         label = MyLabel(label)
         full_graph_data = 0
         return p1_data, p2_data, full_graph_data, label
+
+    def get_accuracy_scores(self) -> Tuple[float, float]:
+        limit_acc = sum(self.accuracy_limit)/len(self)
+        random_acc = sum(self.accuracy)/len(self)
+        return limit_acc, random_acc
