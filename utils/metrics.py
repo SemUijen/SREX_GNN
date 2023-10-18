@@ -3,13 +3,6 @@ from torch import Tensor
 from typing import Tuple
 
 
-predict = torch.tensor([1, 1, 1, 1])
-label = torch.tensor([5, 0, 5, 5])
-
-sig_pred = torch.sigmoid(predict)
-sig_label = torch.sigmoid(label)
-
-
 def get_accuracy(prediction: Tensor, label: Tensor) -> Tuple[float, float, float]:
     binary_predict = torch.where(prediction > 0.5, 1, 0)
     binary_label = torch.where(label > 0.5, 1, 0)
@@ -17,9 +10,6 @@ def get_accuracy(prediction: Tensor, label: Tensor) -> Tuple[float, float, float
 
     total_accuracy = len(torch.where(equality == True)[0]) / len(prediction)
 
-    print(binary_predict)
-    print(binary_label)
-    print(equality)
     pos_pred = equality[binary_predict.nonzero()]
     if len(pos_pred) == 0:
         pos_acc = 100
@@ -33,9 +23,6 @@ def get_accuracy(prediction: Tensor, label: Tensor) -> Tuple[float, float, float
         false_neg = 1 - len(torch.where(neg_pred == True)[0]) / len(neg_pred)
 
     return total_accuracy, pos_acc, false_neg
-
-
-print(get_accuracy(sig_pred, sig_label))
 
 
 class PyTMinMaxScalerVectorized(object):
