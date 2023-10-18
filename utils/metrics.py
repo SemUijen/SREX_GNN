@@ -25,6 +25,20 @@ def get_accuracy(prediction: Tensor, label: Tensor) -> Tuple[float, float, float
     return total_accuracy, pos_acc, false_neg
 
 
+def get_accuracy_adjusted(prediction: Tensor, label: Tensor) -> Tuple[float, float, float]:
+    binary_predict = torch.where(prediction > 0.9, 1, 0)
+    binary_label = torch.where(label > 0.9, 1, 0)
+    equality = torch.eq(binary_predict, binary_label)
+
+    pos_pred = equality[binary_predict.nonzero()]
+    if len(pos_pred) == 0:
+        pos_acc_adj = 1
+    else:
+        pos_acc_adj = len(torch.where(pos_pred == True)[0]) / len(pos_pred)
+
+    return pos_acc_adj
+
+
 class PyTMinMaxScalerVectorized(object):
     """
     Transforms each channel to the range [0, 1].
