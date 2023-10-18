@@ -63,5 +63,5 @@ def test_model(model, device, testloader, loss_func):
                 false_neg += falseN
                 number_rows += 1
 
-        return loss, (loss / number_rows), (tot_acc / number_of_rows), (
-                pos_acc / number_of_rows), (false_neg / number_of_rows)
+        return loss, (loss / number_rows), (tot_acc / number_rows), (
+                pos_acc / number_rows), (false_neg / number_rows)
