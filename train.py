@@ -28,7 +28,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
             tot_acc += accTOT
             pos_acc += accPOS
             number_of_rows += 1
-            break
+
         total_train_loss += loss
         loss.backward()
         optimizer.step()
