@@ -43,6 +43,9 @@ def test_model(model, device, testloader, loss_func):
     model.eval()
     loss = 0
     number_rows = 0
+    tot_acc = 0
+    pos_acc = 0
+    false_neg = 0
     with torch.no_grad():
         for count, (p1_data, p2_data, full_graph_data, target) in enumerate(testloader):
             p1_data = p1_data.to(device)
@@ -54,6 +57,11 @@ def test_model(model, device, testloader, loss_func):
                 soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
                 loss += loss1
+                accTOT, accPOS, falseN = get_accuracy(output[batch == i], soft_max_label)
+                tot_acc += accTOT
+                pos_acc += accPOS
+                false_neg += falseN
                 number_rows += 1
 
-        return loss, loss / number_rows
+        return loss, (loss / number_rows), (tot_acc / number_of_rows), (
+                pos_acc / number_of_rows), (false_neg / number_of_rows)
