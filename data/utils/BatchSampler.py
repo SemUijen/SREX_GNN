@@ -7,7 +7,7 @@ import torch
 
 class GroupSampler(Sampler):
 
-    def __init__(self, data_length: int, batch_size: int, group_size: int, randomizer: SystemRandom = SystemRandom()) -> None:
+    def __init__(self, data_length: int, batch_size: int, group_size: int, randomizer: SystemRandom = SystemRandom(42)) -> None:
         self.data_length = data_length
         self.group_size = group_size
         self.batch_size = batch_size
@@ -18,12 +18,6 @@ class GroupSampler(Sampler):
 
     def group_batches(self) -> int:
         return (self.data_length + self.group_size - 1) // self.group_size
-
-    def batch(self, iterable):
-        l = len(iterable)
-        n = self.batch_size
-        for ndx in range(0, l, n):
-            yield iterable[ndx:min(ndx + n, l)]
 
     def __iter__(self) -> Iterator[List[int]]:
         sizes = torch.tensor(range(1, self.data_length+1))
