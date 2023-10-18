@@ -36,7 +36,7 @@ class SREXmodel(nn.Module):
     def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
         def transform_to_route(graph_data, embeddings):
-            node_to_route_vector = torch.tensor(graph_data.client_route_vector[batch_indices == i])
+            node_to_route_vector = graph_data.client_route_vector[batch_indices == i]
             number_of_customers = torch.tensor(len(node_to_route_vector))
             node_to_route_matrix = torch.zeros(number_of_customers, graph_data.num_routes[i], device=device)
             node_to_route_matrix[torch.arange(number_of_customers).long(), node_to_route_vector.long()] = 1
