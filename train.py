@@ -12,6 +12,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
     number_of_rows = 0
     tot_acc = 0
     pos_acc = 0
+    false_neg = 0
     for count, (p1_data, p2_data, full_graph_data, target) in enumerate(trainloader):
         p1_data = p1_data.to(device)
         p2_data = p2_data.to(device)
@@ -24,16 +25,18 @@ def train_model(model, device, trainloader, optimizer, loss_func):
             soft_max_label = torch.sigmoid(label)
             loss1 = loss_func(output[batch == i], soft_max_label)
             loss += loss1
-            accTOT, accPOS = get_accuracy(output[batch == i], soft_max_label)
+            accTOT, accPOS, falseN = get_accuracy(output[batch == i], soft_max_label)
             tot_acc += accTOT
             pos_acc += accPOS
+            false_neg += falseN
             number_of_rows += 1
 
         total_train_loss += loss
         loss.backward()
         optimizer.step()
 
-    return total_train_loss, (total_train_loss / number_of_rows), tot_acc, pos_acc
+    return total_train_loss, (total_train_loss / number_of_rows), (tot_acc / number_of_rows), (
+                pos_acc / number_of_rows), (false_neg / number_of_rows)
 
 
 def test_model(model, device, testloader, loss_func):
