@@ -12,7 +12,7 @@ def get_accuracy(prediction: Tensor, label: Tensor) -> Tuple[float, float, float
 
     pos_pred = equality[binary_predict.nonzero()]
     if len(pos_pred) == 0:
-        pos_acc = 100
+        pos_acc = 1
     else:
         pos_acc = len(torch.where(pos_pred == True)[0]) / len(pos_pred)
 
