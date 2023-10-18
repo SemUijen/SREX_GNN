@@ -1,17 +1,31 @@
 import torch
-
-predict = [-200, 0, 10, 200]
-predict_T = torch.tensor(predict)
-label = torch.tensor([-5, -8, 10, 30])
-
-sigmoid = torch.sigmoid(predict_T)
-
-print(sigmoid)
-def get_accuracy(prediction, label):
+from torch import Tensor
+from typing import Tuple
 
 
-    accuracy = 1
-    return accuracy
+def get_accuracy(prediction: Tensor, label: Tensor) -> Tuple[float, float]:
+    binary_predict = torch.where(prediction > 0.5, 1, 0)
+    binary_label = torch.where(label > 0.5, 1, 0)
+    equality = torch.eq(binary_predict, binary_label)
+
+    total_accuracy = len(torch.where(equality == True)[0]) / len(prediction)
+
+    pos_pred = equality[binary_predict.nonzero()]
+    pos_acc = len(torch.where(pos_pred == True)[0]) / len(pos_pred)
+
+    return total_accuracy, pos_acc
 
 
-get_accuracy(sigmoid, label)
+class PyTMinMaxScalerVectorized(object):
+    """
+    Transforms each channel to the range [0, 1].
+    """
+
+    def __call__(self, tensor):
+        tensor.float()
+        dist = (tensor.max(dim=0, keepdim=True)[0] - tensor.min(dim=0, keepdim=True)[0])
+        print(dist)
+        dist[dist == 0.] = 1.
+        scale = 1.0 / dist
+        tensor.mul_(scale)  # .sub_(tensor.min(dim=0, keepdim=True)[0])
+        return tensor

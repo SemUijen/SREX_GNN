@@ -29,13 +29,14 @@ if __name__ == "__main__":
     # TODO: should loss be averaged over each parent combination ?(combinations have different sizes so absolute loss favors smaller instances)
     loss_func = nn.BCELoss(reduction='mean')
 
-    '''
-    nr_epochs = 5
+    nr_epochs = 1
+
     for epoch in range(nr_epochs):
-        train_loss = train_model(model, device, train_dataloader, optimizer, loss_func)
+        train_loss, avg_loss, tot_acc, poss_acc = train_model(model, device, train_dataloader, optimizer, loss_func)
 
         test_loss = test_model(model, device, test_dataloader, loss_func)
 
         print(
-           f'Epoch {epoch + 1} / {nr_epochs} [==============================] - train_loss : {train_loss} - test_loss : {test_loss}')'''
-
+            f'Epoch {epoch + 1} / {nr_epochs} [======] - train_loss(Tot, Avg): {"{:.2f}".format(train_loss)},'
+            f' {"{:.2f}".format(avg_loss)} - test_loss : {"{:.2f}".format(test_loss)},'
+            f'tot_acc: {"{:.2f}".format(tot_acc)} - poss_acc : {"{:.2f}".format(test_loss)}')
