@@ -105,6 +105,9 @@ def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsiz
     test_size = size - train_size
 
     generator1 = torch.Generator().manual_seed(seed)
+
+
+    # TODO Manually split dataset
     train_set, test_set = random_split(dataset, [train_size, test_size], generator=generator1)
 
     sampler = GroupSampler(data_length=len(train_set), batch_size=batchsize, group_size=12)
