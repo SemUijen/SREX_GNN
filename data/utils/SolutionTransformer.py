@@ -17,11 +17,7 @@ class SolutionTransformer:
 
         else:
             instance = read(f"./data/routes/{instance_name}.vrp", round_func='round')
-
-        # TODO: Add instance type to ProblemData
-        # if instance.type is not 'VRPTW':
-        #     instance.client(1).tw_late
-
+            instance.client(1).tw_late
 
         return instance
 
