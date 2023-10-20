@@ -49,7 +49,7 @@ class SREXmodel(nn.Module):
             temp_tensor = []
             nrRoutes_batch = []
             for i1 in range(route_embeddings.shape[0]):
-                for i2 in range(1, max_move):
+                for i2 in range(1, max_move+1):
                     # TODO: Sum mean? global pooling?
 
                     if i1 + i2 > max_move:
@@ -80,7 +80,7 @@ class SREXmodel(nn.Module):
             p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
             full_matrix = torch.tensor([], device=device)
-            for NrRoutes_move in range(1, max_to_move):
+            for NrRoutes_move in range(1, max_to_move+1):
                 a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
                                                p2_sum_of_routes[p2_Route_batch == NrRoutes_move][None, :])
                 test = torch.cat((a, b), -1)
