@@ -35,6 +35,7 @@ class SREXmodel(nn.Module):
 
     def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
+
         def transform_to_route(graph_data, embeddings):
             node_to_route_vector = graph_data.client_route_vector[batch_indices == i]
             number_of_customers = torch.tensor(len(node_to_route_vector))
@@ -52,7 +53,6 @@ class SREXmodel(nn.Module):
                     # TODO: Sum mean? global pooling?
 
                     if i1 + i2 > max_move:
-
                         if i1 > max_move:
                             indices = torch.arange(0, (i1 + i2) - max_move)
                         else:
