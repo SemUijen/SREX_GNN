@@ -112,6 +112,8 @@ class SREXmodel(nn.Module):
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
                                                                                          P1_embedding, P2_embedding)
 
+        # TODO: after the PtoP embeddings the linear layers look at each combination seperatly but technically they are not seperate
+
         # TODO Add extra linear layers
         # linear layers
         out = self.fc1(PtoP_embeddings)
