@@ -34,7 +34,6 @@ def train_model(model, device, trainloader, optimizer, loss_func):
             false_neg += falseN
             pos_acc_adj += get_accuracy_adjusted(output[batch == i], soft_max_label)
             number_of_rows += 1
-        break
         total_train_loss += loss
         loss.backward()
         optimizer.step()

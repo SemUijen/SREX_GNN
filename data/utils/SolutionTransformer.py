@@ -95,13 +95,14 @@ class SolutionTransformer:
 
         # total number of routes
         num_routes = solution.num_routes()
+        client_features = self.get_node_features(instance)
 
-        return client_route_vector, edge_index, edge_weight, num_routes
+        return client_route_vector, edge_index, edge_weight, num_routes, client_features
 
     def full_graph_to_input(self, instance: ProblemData):
 
         client_features = self.get_node_features(instance)
-        edge_weight = self.get_edge_features_from_instance(instance)
+        edge_features = self.get_edge_features_from_instance(instance)
 
         # number of nodes are total clients + depot
         num_nodes = instance.num_clients + 1
@@ -109,6 +110,8 @@ class SolutionTransformer:
         fully_connected = torch.tensor(fully_connected)
 
         edge_index = fully_connected.nonzero().t()
+        row, col = edge_index
+        edge_weight = edge_features[row, col]
 
         return edge_index, edge_weight, client_features
 
@@ -124,8 +127,7 @@ class SolutionTransformer:
                 instance = self.get_instance(instance_name=instance_name)
                 #solution = self.route_to_solutions_object(route=parent_route, instance=instance)
 
-                client_route_vector, edge_index, edge_weight, num_routes = self.solution_to_input(instance=instance, solution=parent_solution)
-                return client_route_vector, edge_index, edge_weight, num_routes
+                return self.solution_to_input(instance=instance, solution=parent_solution)
 
             else:
                 raise "Solution Transformer Expects a Route"

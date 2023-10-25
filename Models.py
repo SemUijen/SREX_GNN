@@ -8,17 +8,18 @@ from torch import Tensor
 
 class SREXmodel(nn.Module):
 
-    def __init__(self, num_node_features: int, hidden_dim: int = 64, max_routes_to_swap: int = 60, num_heads: int = 8,
+    def __init__(self, num_node_features: int, hidden_dim: int = 64, num_heads: int = 8,
                  dropout: float = 0.2):
         super(SREXmodel, self).__init__()
 
         self.num_node_features = num_node_features
         self.hidden_dim = hidden_dim
-        self.max_routes_to_swap = max_routes_to_swap
         self.num_heads = num_heads
 
         # the NN learning the representation of Parent solutions with Node = Customer
         self.GAT_SolutionGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
+                                         heads=self.num_heads, dropout=dropout)
+        self.GAT_FullGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
                                          heads=self.num_heads, dropout=dropout)
 
         self.relu = nn.LeakyReLU()
@@ -92,12 +93,15 @@ class SREXmodel(nn.Module):
 
         return PtoP_embeddings, PtoP_batch
 
-    def forward(self, parent1_data: Data, parent2_data: Data):
+    def forward(self, parent1_data: Data, parent2_data: Data, full_graph: Data):
+
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
         # get graph input for solution1
         P1_nodefeatures, P1_edge_index, P1_edgeFeatures = parent1_data.x, parent1_data.edge_index, parent1_data.edge_attr
         # get graph input for solution 2
         P2_nodefeatures, P2_edge_index, P2_edgeFeatures = parent2_data.x, parent2_data.edge_index, parent2_data.edge_attr
+        # get graph input for full graph
+        nodefeatures, edge_index, edgeFeatures = full_graph.x, full_graph.edge_index, full_graph.edge_attr
 
         # TODO: both embedding have no activation function yet: embedding = self.relu(embedding)?
         # Node(Customer) Embedding Parent1 (Current setup is without whole graph)
@@ -108,12 +112,15 @@ class SREXmodel(nn.Module):
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
         P2_embedding = self.relu(P2_embedding)
 
+        #full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
+
+        #print(full_embedding.shape)
+
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
                                                                                          P1_embedding, P2_embedding)
 
         # TODO: after the PtoP embeddings the linear layers look at each combination seperatly but technically they are not seperate
-
         # TODO Add extra linear layers
         # linear layers
         out = self.fc1(PtoP_embeddings)

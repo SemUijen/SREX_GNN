@@ -96,22 +96,3 @@ class MyDataLoader(torch.utils.data.DataLoader):
             collate_fn=MyCollater(follow_batch, exclude_keys),
             **kwargs,
         )
-
-
-def get_train_test_loader(dataset: ParentGraphsDataset, seed: int = 42, batchsize: int = 1, num_workers: int = 0) -> \
-        tuple[MyDataLoader, MyDataLoader]:
-    size = len(dataset)
-    train_size = math.floor(0.8 * size)
-    test_size = size - train_size
-
-    generator1 = torch.Generator().manual_seed(seed)
-
-
-    # TODO Manually split dataset
-    train_set, test_set = random_split(dataset, [train_size, test_size], generator=generator1)
-
-    sampler = GroupSampler(data_length=len(train_set), batch_size=batchsize, group_size=12)
-    train_loader = MyDataLoader(dataset=train_set, batch_sampler=sampler, num_workers=num_workers,
-                                collate_fn=MyCollater(None, None))
-    test_loader = MyDataLoader(dataset=test_set, batch_size=batchsize, num_workers=num_workers)
-    return train_loader, test_loader

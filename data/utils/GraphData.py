@@ -1,5 +1,5 @@
 import torch
-from torch_geometric.data import Data, Dataset, DataLoader
+from torch_geometric.data import Data
 
 from typing import Tuple
 from torch import Tensor
