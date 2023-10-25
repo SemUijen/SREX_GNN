@@ -101,7 +101,7 @@ class SREXmodel(nn.Module):
         # get graph input for solution 2
         P2_nodefeatures, P2_edge_index, P2_edgeFeatures = parent2_data.x, parent2_data.edge_index, parent2_data.edge_attr
         # get graph input for full graph
-        nodefeatures, edge_index, edgeFeatures = full_graph.x, full_graph.edge_index, full_graph.edge_attr
+        #nodefeatures, edge_index, edgeFeatures = full_graph.x, full_graph.edge_index, full_graph.edge_attr
 
         # TODO: both embedding have no activation function yet: embedding = self.relu(embedding)?
         # Node(Customer) Embedding Parent1 (Current setup is without whole graph)

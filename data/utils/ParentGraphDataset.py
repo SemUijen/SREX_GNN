@@ -100,12 +100,13 @@ class ParentGraphsDataset(Dataset):
         p1_data = torch.load(osp.join(self.processed_dir, f'ParentGraph_{p1_idx}.pt'))
         p2_data = torch.load(osp.join(self.processed_dir, f'ParentGraph_{p2_idx}.pt'))
 
-        full_graph = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
+        #full_graph = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
 
         label = self.labels[idx]
         # because of varying sizes of labels. The labels are put in dict so they can be stacked by dataloader
 
         label = MyLabel(label)
+        full_graph=0
         return p1_data, p2_data, full_graph, label
 
     def get_accuracy_scores(self) -> Tuple[float, float]:
