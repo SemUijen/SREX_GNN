@@ -45,36 +45,37 @@ class ParentGraphsDataset(Dataset):
         return raw_data
 
     def process(self) -> None:
-        if not self.is_processed:
-            # First get FullGraphs
-            idx = 0
-            for instance in self.instances:
-                edge_index, edge_weight, client_features = self.pre_transform(instance_name=instance,
-                                                                              get_full_graph=True)
-                data = FullGraph(edge_index, edge_weight, client_features)
-                file_name = f'FullGraph_{idx}.pt'
-                torch.save(data, osp.join(self.processed_dir, file_name))
-                self.instance_dict[instance] = idx
-                idx += 1
 
-            for raw_path in self.raw_paths:
-                # Read data from `raw_path`.
-                raw_data = self.read_pickle(raw_path)
+        # First get FullGraphs
+        idx = 0
+        for instance in self.instances:
+            edge_index, edge_weight, client_features = self.pre_transform(instance_name=instance,
+                                                                          get_full_graph=True)
+            data = FullGraph(edge_index, edge_weight, client_features)
+            file_name = f'FullGraph_{idx}.pt'
+            torch.save(data, osp.join(self.processed_dir, file_name))
+            self.instance_dict[instance] = idx
+            idx += 1
 
-                for batch in range(len(raw_data["parent_routes"])):
-                    # process_whole_graph
-                    route_instance = raw_data["instances"][batch]
+        for raw_path in self.raw_paths:
+            # Read data from `raw_path`.
+            raw_data = self.read_pickle(raw_path)
 
-                    # for getting the correct Full_graph
-                    InstanceIdx = [self.instance_dict[route_instance]] * 12
-                    self.instance_idx.extend(InstanceIdx)
+            for batch in range(len(raw_data["parent_routes"])):
+                # process_whole_graph
+                route_instance = raw_data["instances"][batch]
 
-                    # add couple labels
-                    self.parent_couple_idx.extend(raw_data['parent_couple_idx'][batch])
-                    self.labels.extend(raw_data["labels"][batch])
-                    self.accuracy.extend(raw_data["random_acc"][batch])
-                    self.accuracy_limit.extend(raw_data["random_acc_limit"][batch])
+                # for getting the correct Full_graph
+                InstanceIdx = [self.instance_dict[route_instance]] * 12
+                self.instance_idx.extend(InstanceIdx)
 
+                # add couple labels
+                self.parent_couple_idx.extend(raw_data['parent_couple_idx'][batch])
+                self.labels.extend(raw_data["labels"][batch])
+                self.accuracy.extend(raw_data["random_acc"][batch])
+                self.accuracy_limit.extend(raw_data["random_acc_limit"][batch])
+
+                if not self.is_processed:
                     for i in range(len(raw_data["parent_routes"][batch])):
                         solution = raw_data["parent_routes"][batch][i]
                         idx = raw_data["parent_ids"][batch][i]
