@@ -15,11 +15,12 @@ def train_model(model, device, trainloader, optimizer, loss_func):
     false_neg = 0
     pos_acc_adj = 0
 
-    for count, (p1_data, p2_data, full_graph_data, target) in enumerate(trainloader):
+    for count, (p1_data, p2_data, full_graph, target) in enumerate(trainloader):
         p1_data = p1_data.to(device)
         p2_data = p2_data.to(device)
+        full_graph = full_graph.to(device)
         optimizer.zero_grad()
-        output, batch = model(p1_data, p2_data)
+        output, batch = model(p1_data, p2_data, full_graph)
         loss = 0
         # TODO: Average losses?
         for i in range(len(p1_data)):
@@ -33,7 +34,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
             false_neg += falseN
             pos_acc_adj += get_accuracy_adjusted(output[batch == i], soft_max_label)
             number_of_rows += 1
-
+        break
         total_train_loss += loss
         loss.backward()
         optimizer.step()
