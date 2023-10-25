@@ -6,7 +6,7 @@ from utils.metrics import get_accuracy, get_accuracy_adjusted
 
 
 def train_model(model, device, trainloader, optimizer, loss_func):
-    print(f'Training on {len(trainloader)} samples.....')
+    print(f'Training on {len(trainloader)} batches.....')
     model.train()
     total_train_loss = 0
     number_of_rows = 0
@@ -23,6 +23,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
         output, batch = model(p1_data, p2_data, full_graph)
         loss = 0
         # TODO: Average losses?
+        print(f"batch {count}")
         for i in range(len(p1_data)):
             label = torch.tensor(target[i].label, device=device, dtype=torch.float)
             soft_max_label = torch.sigmoid(label)
@@ -34,6 +35,8 @@ def train_model(model, device, trainloader, optimizer, loss_func):
             false_neg += falseN
             pos_acc_adj += get_accuracy_adjusted(output[batch == i], soft_max_label)
             number_of_rows += 1
+
+        print(f"batch {count}  accuracy calculated")
         total_train_loss += loss
         loss.backward()
         optimizer.step()
