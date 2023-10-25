@@ -132,6 +132,6 @@ dmypy.json
 data/test_case/processed/*
 !data/test_case/processed/.gitkeep
 data/model_data/*
-data/model_data/.gitkeep
+!data/model_data/.gitkeep
 # Pycharm IDE settings
 .idea/
