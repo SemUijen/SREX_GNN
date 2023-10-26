@@ -58,10 +58,11 @@ def test_model(model, device, testloader, loss_func):
     false_neg = 0
     pos_acc_adj = 0
     with torch.no_grad():
-        for count, (p1_data, p2_data, full_graph_data, target) in enumerate(testloader):
+        for count, (p1_data, p2_data, full_graph, target) in enumerate(testloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
-            output, batch = model(p1_data, p2_data)
+            full_graph = full_graph.to(device)
+            output, batch = model(p1_data, p2_data, full_graph)
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
