@@ -72,7 +72,7 @@ class SREXmodel(nn.Module):
         P2_batch_indices = p2_graph_data.batch
         PtoP_embeddings = torch.tensor([], device=device)
         PtoP_batch = torch.tensor([], device=device)
-        for i in range(batch_size):
+        for batch_idx in range(batch_size):
             p1_route_embedding = transform_to_route(p1_graph_data, p1_embeddings, P1_batch_indices, batch_idx)
             p2_route_embedding = transform_to_route(p2_graph_data, p2_embeddings, P2_batch_indices, batch_idx)
 
@@ -90,7 +90,7 @@ class SREXmodel(nn.Module):
 
             PtoP_embeddings = torch.cat((PtoP_embeddings, full_matrix))
 
-            PtoP_batch = torch.cat((PtoP_batch, torch.tensor([i] * full_matrix.size(0), device=device)))
+            PtoP_batch = torch.cat((PtoP_batch, torch.tensor([batch_idx] * full_matrix.size(0), device=device)))
 
         return PtoP_embeddings, PtoP_batch
 
