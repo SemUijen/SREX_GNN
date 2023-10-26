@@ -43,11 +43,6 @@ class SigmoidVectorizedScaler(object):
 
         return tensor
 
-scaler = SigmoidVectorizedScaler(20, 'cpu')
-label = torch.tensor([0,1,3,4], dtype=torch.float)
-
-print(scaler(label))
-
 
 class SoftmaxVectorizedScaler(object):
     """
