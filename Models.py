@@ -37,12 +37,12 @@ class SREXmodel(nn.Module):
     def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
 
-        def transform_to_route(graph_data, embeddings):
-            node_to_route_vector = graph_data.client_route_vector[batch_indices == i]
+        def transform_to_route(graph_data, embeddings, batch_indices, batch_idx):
+            node_to_route_vector = graph_data.client_route_vector[batch_indices == batch_idx]
             number_of_customers = torch.tensor(len(node_to_route_vector))
-            node_to_route_matrix = torch.zeros(number_of_customers, graph_data.num_routes[i], device=device)
+            node_to_route_matrix = torch.zeros(number_of_customers, graph_data.num_routes[batch_idx], device=device)
             node_to_route_matrix[torch.arange(number_of_customers).long(), node_to_route_vector.long()] = 1
-            route_embedding = torch.matmul(node_to_route_matrix.t(), embeddings[batch_indices == i])
+            route_embedding = torch.matmul(node_to_route_matrix.t(), embeddings[batch_indices == batch_idx])
             return route_embedding
 
         def transform_to_nrRoutes(route_embeddings, max_move):
@@ -68,12 +68,13 @@ class SREXmodel(nn.Module):
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
-        batch_indices = p1_graph_data.batch
+        P1_batch_indices = p1_graph_data.batch
+        P2_batch_indices = p2_graph_data.batch
         PtoP_embeddings = torch.tensor([], device=device)
         PtoP_batch = torch.tensor([], device=device)
         for i in range(batch_size):
-            p1_route_embedding = transform_to_route(p1_graph_data, p1_embeddings)
-            p2_route_embedding = transform_to_route(p2_graph_data, p2_embeddings)
+            p1_route_embedding = transform_to_route(p1_graph_data, p1_embeddings, P1_batch_indices, batch_idx)
+            p2_route_embedding = transform_to_route(p2_graph_data, p2_embeddings, P2_batch_indices, batch_idx)
 
             max_to_move = min(p1_route_embedding.size(0), p2_route_embedding.size(0))
 
