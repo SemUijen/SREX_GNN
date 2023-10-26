@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 def train_model(model, device, trainloader, optimizer, loss_func):
-    scaler = SigmoidVectorizedScaler(20)
+    scaler = SigmoidVectorizedScaler(20, device)
     print(f'Training on {len(trainloader)} batches.....')
     model.train()
     total_train_loss = 0
