@@ -49,6 +49,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
 
 
 def test_model(model, device, testloader, loss_func):
+    scaler = SigmoidVectorizedScaler(20, device)
     model.eval()
     loss = 0
     number_rows = 0
@@ -64,6 +65,7 @@ def test_model(model, device, testloader, loss_func):
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
+                label = scaler(label)
                 soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
                 loss += loss1
