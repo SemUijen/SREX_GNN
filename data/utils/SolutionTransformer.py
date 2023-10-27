@@ -38,6 +38,8 @@ class SolutionTransformer:
 
     @staticmethod
     def get_node_features_from_instance(instance: ProblemData) -> Tensor:
+
+        #TODO add graph Features: Number of vehicles and Capacity of vechicle
         client_features = []
 
         for client_nr in range(instance.num_clients + 1):
