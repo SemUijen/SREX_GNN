@@ -5,9 +5,10 @@ from torch.nn.functional import softmax, sigmoid
 from utils.metrics import get_accuracy, get_accuracy_adjusted
 from utils.LabelScalers import SigmoidVectorizedScaler
 from tqdm import tqdm
+from data.utils.get_full_graph import get_full_graph
 
 
-def train_model(model, device, trainloader, optimizer, loss_func):
+def train_model(model, device, trainloader, optimizer, loss_func, processed_dir):
     scaler = SigmoidVectorizedScaler(20, device)
     print(f'Training on {len(trainloader)} batches.....')
     model.train()
@@ -19,12 +20,13 @@ def train_model(model, device, trainloader, optimizer, loss_func):
     pos_acc_adj = 0
     with tqdm(total=len(trainloader) - 1) as pbar:
         # TODO Torch.unique for Full graph and send graph instance_idx to input model
-        for count, (p1_data, p2_data, full_graph, target) in enumerate(trainloader):
+        for count, (p1_data, p2_data, target, instance_idx) in enumerate(trainloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
+            full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
             full_graph = full_graph.to(device)
             optimizer.zero_grad()
-            output, batch = model(p1_data, p2_data, full_graph)
+            output, batch = model(p1_data, p2_data, full_graph, instance_indices)
             loss = 0
             # TODO: Average losses?
             for i in range(len(p1_data)):
@@ -49,7 +51,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
             pos_acc / number_of_rows), (false_neg / number_of_rows), (pos_acc_adj / number_of_rows)
 
 
-def test_model(model, device, testloader, loss_func):
+def test_model(model, device, testloader, loss_func, processed_dir):
     scaler = SigmoidVectorizedScaler(20, device)
     model.eval()
     loss = 0
@@ -59,11 +61,12 @@ def test_model(model, device, testloader, loss_func):
     false_neg = 0
     pos_acc_adj = 0
     with torch.no_grad():
-        for count, (p1_data, p2_data, full_graph, target) in enumerate(testloader):
+        for count, (p1_data, p2_data, target, instance_idx) in enumerate(testloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
+            full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
             full_graph = full_graph.to(device)
-            output, batch = model(p1_data, p2_data, full_graph)
+            output, batch = model(p1_data, p2_data, full_graph, instance_indices)
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
