@@ -31,7 +31,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir)
             # TODO: Average losses?
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 5.0, 1.0)
+                loss_func.weight = torch.where(label > 0, 3.0, 1.0)
                 label = scaler(label)
                 soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
@@ -71,12 +71,12 @@ def test_model(model, device, testloader, loss_func, processed_dir):
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 5.0, 1.0)
+                loss_func.weight = torch.where(label > 0, 3.0, 1.0)
                 label = scaler(label)
                 # label = label.where(label>0, 1, 0)
                 soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
-                print(loss1)
+
                 loss += loss1
                 accTOT, accPOS, falseN = get_accuracy(output[batch == i], soft_max_label)
                 tot_acc += accTOT

@@ -64,7 +64,7 @@ def main():
 
         print(
             f'Epoch {epoch + 1} / {nr_epochs} [======] - train_loss(Tot, Avg): {"{:.2f}".format(tot_train_loss)},'
-            f' {"{:.2f}".format(avg_train_loss)} - test_loss : {"{:.2f}".format(0)},'
+            f' {"{:.2f}".format(avg_train_loss)} - test_loss : {"{:.2f}".format(avg_test_loss)},'
             f' train_scores: {"{:.2f}".format(tot_acc)}, {"{:.2f}".format(pos_acc)}, {"{:.2f}".format(false_neg)}, {"{:.2f}".format(acc_adj)},'
             f' test_scores {"{:.2f}".format(tot_acc_test)}, {"{:.2f}".format(pos_acc_test)}, {"{:.2f}".format(false_neg_test)}, {"{:.2f}".format(acc_adj_test)}')
 
