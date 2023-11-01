@@ -42,10 +42,9 @@ def main():
     model = SREXmodel(num_node_features=trainset.num_node_features)
     model.to(device)
 
-    # TODO: look at optimizers
+
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
 
-    # TODO: should loss be averaged over each parent combination ?(combinations have different sizes so absolute loss favors smaller instances)
     loss_func = nn.BCELoss(reduction='mean')
 
     nr_epochs = 5
