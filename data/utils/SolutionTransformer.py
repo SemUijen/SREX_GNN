@@ -1,4 +1,3 @@
-import vrplib
 from pyvrp import read, Solution, ProblemData
 import numpy as np
 from typing import Tuple, List
@@ -29,10 +28,13 @@ class SolutionTransformer:
     def get_node_features(instance: ProblemData) -> Tensor:
         client_features = []
 
+        capacity = instance.vehicle_type(0).capacity
+        num_veh = instance.num_vehicles
+
         for client_nr in range(instance.num_clients + 1):
             client = instance.client(client_nr)
             client_features.append(
-                [client.x, client.y, client.tw_late, client.tw_early, client.demand, client.service_duration])
+                [client.x, client.y, client.tw_late, client.tw_early, client.demand, client.service_duration, capacity, num_veh])
 
         return torch.tensor(client_features, dtype=torch.float)
 
