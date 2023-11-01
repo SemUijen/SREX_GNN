@@ -52,7 +52,7 @@ class SREXmodel(nn.Module):
             # TODO: change to cumsum: https://pytorch.org/docs/stable/generated/torch.cumsum.html
             for i1 in range(route_embeddings.shape[0]):
                 for i2 in range(1, max_move+1):
-                    # TODO: Sum mean? global pooling?
+                    # TODO: Sum, mean global pooling?
 
                     if i1 + i2 > max_move:
                         if i1 > max_move:

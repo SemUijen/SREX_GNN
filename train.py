@@ -18,6 +18,7 @@ def train_model(model, device, trainloader, optimizer, loss_func):
     false_neg = 0
     pos_acc_adj = 0
     with tqdm(total=len(trainloader) - 1) as pbar:
+        # TODO Torch.unique for Full graph and send graph instance_idx to input model
         for count, (p1_data, p2_data, full_graph, target) in enumerate(trainloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
