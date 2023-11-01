@@ -20,7 +20,7 @@ class SREXmodel(nn.Module):
         self.GAT_SolutionGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
                                          heads=self.num_heads, dropout=dropout)
         self.GAT_FullGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
-                                         heads=self.num_heads, dropout=dropout)
+                                     heads=self.num_heads, dropout=dropout)
 
         self.relu = nn.LeakyReLU()
         self.dropout = nn.Dropout(dropout)
@@ -47,25 +47,19 @@ class SREXmodel(nn.Module):
 
         def transform_to_nrRoutes(route_embeddings, max_move):
 
-            temp_tensor = []
-            nrRoutes_batch = []
-            # TODO: change to cumsum: https://pytorch.org/docs/stable/generated/torch.cumsum.html
-            for i1 in range(route_embeddings.shape[0]):
-                for i2 in range(1, max_move+1):
-                    # TODO: Sum, mean global pooling?
+            embedding_dim = route_embeddings.shape[1]
+            num_routes = route_embeddings.shape[0]
 
-                    if i1 + i2 > max_move:
-                        if i1 > max_move:
-                            indices = torch.arange(0, (i1 + i2) - max_move)
-                        else:
-                            indices = torch.cat((torch.arange(0, (i1 + i2) - max_move), torch.arange(i1, max_move)))
+            route_embeddings2 = torch.cat((route_embeddings, route_embeddings), 0)
+            cumsum2 = torch.cat((torch.zeros(1, embedding_dim), torch.cumsum(route_embeddings2, 0)), 0)
 
-                    else:
-                        indices = torch.arange(i1, i1 + i2)
-                    temp_tensor.append(torch.sum(route_embeddings[indices], -2))
-                    nrRoutes_batch.append(i2)
+            i1 = torch.arange(num_routes)
+            num_move = torch.arange(1, max_move + 1)
+            end_idx = i1[:, None] + num_move[None, :]
+            start_idx = i1[:, None]
+            diff = (cumsum2[end_idx, :] - cumsum2[start_idx])
 
-            return torch.stack(temp_tensor), torch.tensor(nrRoutes_batch)
+            return diff.view(-1, embedding_dim), num_move.repeat(num_routes)
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
@@ -83,7 +77,7 @@ class SREXmodel(nn.Module):
             p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
             full_matrix = torch.tensor([], device=device)
-            for NrRoutes_move in range(1, max_to_move+1):
+            for NrRoutes_move in range(1, max_to_move + 1):
                 a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
                                                p2_sum_of_routes[p2_Route_batch == NrRoutes_move][None, :])
                 test = torch.cat((a, b), -1)
@@ -95,7 +89,7 @@ class SREXmodel(nn.Module):
 
         return PtoP_embeddings, PtoP_batch
 
-    def forward(self, parent1_data: Data, parent2_data: Data, full_graph: Data):
+    def forward(self, parent1_data: Data, parent2_data: Data, full_graph: Data, instance_batch):
 
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
         # get graph input for solution1
