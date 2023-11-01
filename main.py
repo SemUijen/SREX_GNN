@@ -48,7 +48,10 @@ def main():
     # TODO: should loss be averaged over each parent combination ?(combinations have different sizes so absolute loss favors smaller instances)
     loss_func = nn.BCELoss(reduction='mean')
 
-    nr_epochs = 10
+    nr_epochs = 5
+
+    print(trainset.get_accuracy_scores())
+    print(testset.get_accuracy_scores())
 
     for epoch in range(nr_epochs):
         tot_train_loss, avg_train_loss, tot_acc, pos_acc, false_neg, acc_adj = train_model(model, device,
@@ -71,5 +74,10 @@ def main():
 
 if __name__ == "__main__":
 
+    #TODO create parameters loop
+    # use different scalers: Binary Scaler
+    # use different weights https://www.analyticsvidhya.com/blog/2020/10/improve-class-imbalance-class-weights/#h-what-are-class-weights
+    # use different learning rate
+    # check if more features are needed
 
     main()
