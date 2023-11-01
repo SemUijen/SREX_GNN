@@ -20,14 +20,15 @@ def get_accuracy(prediction: Tensor, label: Tensor) -> Tuple[float, float, float
     if len(neg_pred) == 0:
         false_neg = 0
     else:
-        false_neg = 1 - len(torch.where(neg_pred == True)[0]) / len(neg_pred)
+        false_neg = len(torch.where(neg_pred == False)[0]) / len(neg_pred)
+        true_neg = len(torch.where(neg_pred == True)[0]) / len(neg_pred)
 
     return total_accuracy, pos_acc, false_neg
 
 
 def get_accuracy_adjusted(prediction: Tensor, label: Tensor) -> Tuple[float, float, float]:
-    binary_predict = torch.where(prediction > 0.9, 1, 0)
-    binary_label = torch.where(label > 0.9, 1, 0)
+    binary_predict = torch.where(prediction > 0.8, 1, 0)
+    binary_label = torch.where(label > 0.8, 1, 0)
     equality = torch.eq(binary_predict, binary_label)
 
     pos_pred = equality[binary_predict.nonzero()]
