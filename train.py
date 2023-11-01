@@ -20,7 +20,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir)
     pos_acc_adj = 0
     with tqdm(total=len(trainloader) - 1) as pbar:
         # TODO Torch.unique for Full graph and send graph instance_idx to input model
-        for count, (p1_data, p2_data, target, instance_idx) in enumerate(trainloader):
+        for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(trainloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
             full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
@@ -29,11 +29,13 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir)
             output, batch = model(p1_data, p2_data, full_graph, instance_indices)
             loss = 0
             # TODO: Average losses?
+
             for i in range(len(p1_data)):
+
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 3.0, 1.0)
-                label = scaler(label)
-                soft_max_label = torch.sigmoid(label)
+                loss_func.weight = torch.where(label > 0, 1.4, 1)
+                soft_max_label = torch.where(label > 0, 1.0, 0.0)
+                #soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
                 loss += loss1
                 accTOT, accPOS, falseN = get_accuracy(output[batch == i], soft_max_label)
@@ -62,7 +64,7 @@ def test_model(model, device, testloader, loss_func, processed_dir):
     false_neg = 0
     pos_acc_adj = 0
     with torch.no_grad():
-        for count, (p1_data, p2_data, target, instance_idx) in enumerate(testloader):
+        for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(testloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
             full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
@@ -71,10 +73,9 @@ def test_model(model, device, testloader, loss_func, processed_dir):
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 3.0, 1.0)
-                label = scaler(label)
-                # label = label.where(label>0, 1, 0)
-                soft_max_label = torch.sigmoid(label)
+                loss_func.weight = torch.where(label > 0, 1.4, 1)
+                soft_max_label = torch.where(label > 0, 1.0, 0.0)
+                #soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
 
                 loss += loss1
