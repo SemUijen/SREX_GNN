@@ -103,7 +103,7 @@ class SREXmodel(nn.Module):
         # get graph input for solution 2
         P2_nodefeatures, P2_edge_index, P2_edgeFeatures = parent2_data.x, parent2_data.edge_index, parent2_data.edge_attr
         # get graph input for full graph
-        #nodefeatures, edge_index, edgeFeatures = full_graph.x, full_graph.edge_index, full_graph.edge_attr
+        nodefeatures, edge_index, edgeFeatures = full_graph.x, full_graph.edge_index, full_graph.edge_attr
 
         # TODO: both embedding have no activation function yet: embedding = self.relu(embedding)?
         # Node(Customer) Embedding Parent1 (Current setup is without whole graph)
@@ -114,9 +114,15 @@ class SREXmodel(nn.Module):
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
         P2_embedding = self.relu(P2_embedding)
 
-        #full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
+        full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
 
-        #print(full_embedding.shape)
+        for fg_idx in range(len(full_graph)):
+            P1_embedding[instance_batch==fg_idx] = torch.add(P1_embedding[instance_batch==fg_idx],
+                                                             full_embedding[full_graph.batch==fg_idx].repeat(12,1))
+
+            P2_embedding[instance_batch==fg_idx] = torch.add(P2_embedding[instance_batch==fg_idx],
+                                                             full_embedding[full_graph.batch==fg_idx].repeat(12,1))
+
 
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
@@ -127,6 +133,7 @@ class SREXmodel(nn.Module):
         # linear layers
         out = self.fc1(PtoP_embeddings)
         out = self.relu(out)
+        out = self.dropout(out)
         out = self.fc2(out)
         out = self.relu(out)
         out = self.dropout(out)
