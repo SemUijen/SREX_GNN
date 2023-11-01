@@ -106,8 +106,8 @@ class ParentGraphsDataset(Dataset):
         # because of varying sizes of labels. The labels are put in dict so they can be stacked by dataloader
 
         label = MyLabel(label)
-        full_graph=0
-        return p1_data, p2_data, full_graph, label
+
+        return p1_data, p2_data, label, instance_idx
 
     def get_accuracy_scores(self) -> Tuple[float, float]:
         limit_acc = sum(self.accuracy_limit) / len(self)
