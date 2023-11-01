@@ -51,7 +51,7 @@ class SREXmodel(nn.Module):
             num_routes = route_embeddings.shape[0]
 
             route_embeddings2 = torch.cat((route_embeddings, route_embeddings), 0)
-            cumsum2 = torch.cat((torch.zeros(1, embedding_dim), torch.cumsum(route_embeddings2, 0)), 0)
+            cumsum2 = torch.cat((torch.zeros(1, embedding_dim, device=device), torch.cumsum(route_embeddings2, 0)), 0)
 
             i1 = torch.arange(num_routes)
             num_move = torch.arange(1, max_move + 1)
