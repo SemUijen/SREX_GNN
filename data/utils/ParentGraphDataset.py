@@ -107,7 +107,9 @@ class ParentGraphsDataset(Dataset):
 
         label = MyLabel(label)
 
-        return p1_data, p2_data, label, instance_idx
+        acc = self.accuracy[idx]
+
+        return p1_data, p2_data, label, instance_idx, torch.tensor(acc)
 
     def get_accuracy_scores(self) -> Tuple[float, float]:
         limit_acc = sum(self.accuracy_limit) / len(self)
