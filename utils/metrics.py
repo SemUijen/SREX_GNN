@@ -19,11 +19,25 @@ class Metrics():
         self.tot_neg = 0
         self.num_couples = 0
 
+        self.f1 = 0
+        self.precision = 0
+        self.recall = 0
+
+        self.select_acc = 0
     def __call__(self, prediction: Tensor, label: Tensor):
 
         self.num_couples += 1
         self.get_confusion_matrix(prediction, label)
         self.get_accuracy_adjusted(prediction, label)
+
+    def calculate_scores(self):
+        if self.true_pos > 0:
+            self.recall = self.true_pos / (self.true_pos + self.false_neg)
+            self.precision = self.true_pos / (self.true_pos + self.false_pos)
+            self.f1 = 2 * (self.precision * self.recall) / (self.precision + self.recall)
+
+        if self. adjusted_acc > 0:
+            self.select_acc = self.adjusted_acc / self.num_couples
 
     def get_accuracy_adjusted(self, prediction: Tensor, label: Tensor) -> float:
 
@@ -81,13 +95,6 @@ class Metrics():
         return total_accuracy, pos_acc, false_neg
 
     def __str__(self):
-        if self.true_pos > 0:
-            recall = self.true_pos / (self.true_pos + self.false_neg)
-            precision = self.true_pos / (self.true_pos + self.false_pos)
-            f1_score = 2 * (precision * recall) / (precision + recall)
-
-        else:
-            recall, precision, f1_score = 0, 0, 0
 
         return (f"Metrics {self.name}: \n"
                 f" TP= {self.true_pos} \n"
@@ -96,8 +103,8 @@ class Metrics():
                 f" FN = {self.false_neg} \n"
                 f"\n"
                 f" accuracy = {(self.true_pos + self.true_neg) / (self.true_pos + self.true_neg + self.false_pos + self.false_neg)} \n"
-                f" precision = {precision} \n"
-                f" recall = {recall} \n"
-                f" F1_score = {f1_score} \n"
+                f" precision = {self.precision} \n"
+                f" recall = {self.recall} \n"
+                f" F1_score = {self.f1} \n"
                 f"\n"
-                f" select_acc = {self.adjusted_acc / self.num_couples}")
+                f" select_acc = {self.select_acc}")
