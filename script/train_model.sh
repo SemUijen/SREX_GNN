@@ -24,6 +24,8 @@ if [ ! -z "${SLURM_JOB_ID}" ]; then
     module load aiohttp/3.8.3-GCCcore-11.3.0
     module load matplotlib/3.5.2-foss-2022a
     module load SciPy-bundle/2022.05-foss-2022a
+    module load PyTorch/1.12.0-foss-2022a-CUDA-11.7.0
+    module load torchvision/0.13.1-foss-2022a-CUDA-11.7.0
 fi
 
 # Log versions
@@ -41,6 +43,8 @@ pip3.10 install -q \
     tqdm \
     numpy \
     pyvrp \
+    torch_geometric \
+    torch \
 
 
 # Run experiment
