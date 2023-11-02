@@ -38,18 +38,6 @@ class SolutionTransformer:
 
         return torch.tensor(client_features, dtype=torch.float)
 
-    @staticmethod
-    def get_node_features_from_instance(instance: ProblemData) -> Tensor:
-
-        #TODO add graph Features: Number of vehicles and Capacity of vechicle
-        client_features = []
-
-        for client_nr in range(instance.num_clients + 1):
-            client = instance.client(client_nr)
-            client_features.append(
-                [client.x, client.y, client.tw_late, client.tw_early, client.demand, client.service_duration])
-
-        return torch.tensor(client_features, dtype=torch.float)
 
     @staticmethod
     def get_edge_features_from_instance(instance: ProblemData) -> Tensor:
