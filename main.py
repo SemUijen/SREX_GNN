@@ -53,22 +53,24 @@ def main():
     print(testset.get_accuracy_scores())
 
     for epoch in range(nr_epochs):
-        tot_train_loss, avg_train_loss, tot_acc, pos_acc, false_neg, acc_adj = train_model(model, device,
-                                                                                           train_loader, optimizer,
-                                                                                           loss_func,
-                                                                                           trainset.processed_dir)
+        tot_train_loss, avg_train_loss, train_metric = train_model(model, device,
+                                                                   train_loader, optimizer,
+                                                                   loss_func,
+                                                                   trainset.processed_dir)
 
-        tot_test_loss, avg_test_loss, tot_acc_test, pos_acc_test, false_neg_test, acc_adj_test = test_model(model,
-                                                                                                            device,
-                                                                                                            test_dataloader,
-                                                                                                            loss_func,
-                                                                                                            testset.processed_dir)
+        tot_test_loss, avg_test_loss, test_metric = test_model(model,
+                                                               device,
+                                                               test_dataloader,
+                                                               loss_func,
+                                                               testset.processed_dir)
 
         print(
-            f'Epoch {epoch + 1} / {nr_epochs} [======] - train_loss(Tot, Avg): {"{:.2f}".format(tot_train_loss)},'
-            f' {"{:.2f}".format(avg_train_loss)} - test_loss : {"{:.2f}".format(avg_test_loss)},'
-            f' train_scores: {"{:.2f}".format(tot_acc)}, {"{:.2f}".format(pos_acc)}, {"{:.2f}".format(false_neg)}, {"{:.2f}".format(acc_adj)},'
-            f' test_scores {"{:.2f}".format(tot_acc_test)}, {"{:.2f}".format(pos_acc_test)}, {"{:.2f}".format(false_neg_test)}, {"{:.2f}".format(acc_adj_test)}')
+            f'Epoch {epoch + 1} / {nr_epochs} [======] - train_loss(Tot, Avg): {"{:.2f}".format(tot_train_loss)}, \n'
+            f' {"{:.2f}".format(avg_train_loss)} - test_loss : {"{:.2f}".format(avg_test_loss)}, \n'
+            f"{train_metric} \n"
+            f"{test_metric}")
+
+        torch.save(model.state_dict(), f'C:/SREX_GNN/data/model_data/model_states/SrexGNN_{epoch}')
 
 
 if __name__ == "__main__":
