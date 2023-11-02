@@ -24,6 +24,7 @@ class Metrics():
         self.recall = 0
 
         self.select_acc = 0
+
     def __call__(self, prediction: Tensor, label: Tensor):
 
         self.num_couples += 1
@@ -38,7 +39,7 @@ class Metrics():
             self.precision = self.true_pos / (self.true_pos + self.false_pos)
             self.f1 = 2 * (self.precision * self.recall) / (self.precision + self.recall)
 
-        if self. adjusted_acc > 0:
+        if self.adjusted_acc > 0:
             self.select_acc = self.adjusted_acc / self.num_couples
 
     def get_accuracy_adjusted(self, prediction: Tensor, label: Tensor) -> float:
