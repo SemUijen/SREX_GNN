@@ -8,17 +8,13 @@ from tqdm import tqdm
 from data.utils.get_full_graph import get_full_graph
 
 
-def train_model(model, device, trainloader, optimizer, loss_func, processed_dir):
+def train_model(model, device, trainloader, optimizer, loss_func, processed_dir, parameters):
     scaler = SigmoidVectorizedScaler(20, device)
     metrics = Metrics("Train")
     print(f'Training on {len(trainloader)} batches.....')
     model.train()
     total_train_loss = 0
     number_of_rows = 0
-    tot_acc = 0
-    pos_acc = 0
-    false_neg = 0
-    pos_acc_adj = 0
     with tqdm(total=len(trainloader) - 1) as pbar:
         # TODO Torch.unique for Full graph and send graph instance_idx to input model
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(trainloader):
@@ -33,13 +29,19 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir)
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 2, 1)
-                soft_max_label = torch.where(label > 0, 1.0, 0.0)
-                #soft_max_label = torch.sigmoid(label)
-                loss1 = loss_func(output[batch == i], soft_max_label)
+                loss_func.weight = torch.where(label > 0, parameters["pos_weight"], 1)
+
+                if parameters["binary_label"]:
+                    label = torch.where(label > 0, 1.0, 0.0)
+                else:
+                    label = scaler(label)
+                    label = torch.sigmoid(label)
+
+                loss1 = loss_func(output[batch == i], label)
                 loss += loss1
-                metrics(output[batch == i], soft_max_label)
+                metrics(output[batch == i], label)
                 number_of_rows += 1
+
             total_train_loss += loss
             loss.backward()
             optimizer.step()
@@ -48,16 +50,12 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir)
     return total_train_loss, (total_train_loss / number_of_rows), metrics
 
 
-def test_model(model, device, testloader, loss_func, processed_dir):
+def test_model(model, device, testloader, loss_func, processed_dir, parameters):
     scaler = SigmoidVectorizedScaler(20, device)
     metrics = Metrics("test")
     model.eval()
     loss = 0
-    number_rows = 0
-    tot_acc = 0
-    pos_acc = 0
-    false_neg = 0
-    pos_acc_adj = 0
+    number_of_rows = 0
     with torch.no_grad():
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(testloader):
             p1_data = p1_data.to(device)
@@ -68,12 +66,17 @@ def test_model(model, device, testloader, loss_func, processed_dir):
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 2, 1)
-                soft_max_label = torch.where(label > 0, 1.0, 0.0)
-                #soft_max_label = torch.sigmoid(label)
-                loss1 = loss_func(output[batch == i], soft_max_label)
-                loss += loss1
-                metrics(output[batch == i], soft_max_label)
-                number_rows += 1
+                loss_func.weight = torch.where(label > 0, parameters["pos_weight"], 1)
 
-        return loss, (loss / number_rows), metrics
+                if parameters["binary_label"]:
+                    label = torch.where(label > 0, 1.0, 0.0)
+                else:
+                    label = scaler(label)
+                    label = torch.sigmoid(label)
+
+                loss1 = loss_func(output[batch == i], label)
+                loss += loss1
+                metrics(output[batch == i], label)
+                number_of_rows += 1
+
+        return loss, (loss / number_of_rows), metrics
