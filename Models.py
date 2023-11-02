@@ -31,7 +31,6 @@ class SREXmodel(nn.Module):
         self.fc2 = nn.Linear(self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim / 2))
         self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 2), 1)
 
-        self.softmax = nn.Softmax(dim=-1)
         self.sigmoid = nn.Sigmoid()
 
     def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
@@ -113,11 +112,12 @@ class SREXmodel(nn.Module):
         full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
 
         for fg_idx in range(len(full_graph)):
+            repeat = int(len(instance_batch[instance_batch==fg_idx])/len(full_embedding[full_graph.batch==fg_idx]))
             P1_embedding[instance_batch==fg_idx] = torch.add(P1_embedding[instance_batch==fg_idx],
-                                                             full_embedding[full_graph.batch==fg_idx].repeat(12,1))
+                                                             full_embedding[full_graph.batch==fg_idx].repeat(repeat,1))
 
             P2_embedding[instance_batch==fg_idx] = torch.add(P2_embedding[instance_batch==fg_idx],
-                                                             full_embedding[full_graph.batch==fg_idx].repeat(12,1))
+                                                             full_embedding[full_graph.batch==fg_idx].repeat(repeat,1))
 
 
         # node embeddings to PtoP_embeddings
