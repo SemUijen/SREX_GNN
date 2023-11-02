@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.nn.functional import softmax, sigmoid
-from utils.metrics import get_accuracy, get_accuracy_adjusted
+from utils.metrics import Metrics
 from utils.LabelScalers import SigmoidVectorizedScaler
 from tqdm import tqdm
 from data.utils.get_full_graph import get_full_graph
@@ -10,6 +10,7 @@ from data.utils.get_full_graph import get_full_graph
 
 def train_model(model, device, trainloader, optimizer, loss_func, processed_dir):
     scaler = SigmoidVectorizedScaler(20, device)
+    metrics = Metrics("Train")
     print(f'Training on {len(trainloader)} batches.....')
     model.train()
     total_train_loss = 0
@@ -31,31 +32,25 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir)
             # TODO: Average losses?
 
             for i in range(len(p1_data)):
-
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 1.4, 1)
+                loss_func.weight = torch.where(label > 0, 2, 1)
                 soft_max_label = torch.where(label > 0, 1.0, 0.0)
                 #soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
                 loss += loss1
-                accTOT, accPOS, falseN = get_accuracy(output[batch == i], soft_max_label)
-                tot_acc += accTOT
-                pos_acc += accPOS
-                false_neg += falseN
-                pos_acc_adj += get_accuracy_adjusted(output[batch == i], soft_max_label)
+                metrics(output[batch == i], soft_max_label)
                 number_of_rows += 1
-
             total_train_loss += loss
             loss.backward()
             optimizer.step()
             pbar.update()
 
-    return total_train_loss, (total_train_loss / number_of_rows), (tot_acc / number_of_rows), (
-            pos_acc / number_of_rows), (false_neg / number_of_rows), (pos_acc_adj / number_of_rows)
+    return total_train_loss, (total_train_loss / number_of_rows), metrics
 
 
 def test_model(model, device, testloader, loss_func, processed_dir):
     scaler = SigmoidVectorizedScaler(20, device)
+    metrics = Metrics("test")
     model.eval()
     loss = 0
     number_rows = 0
@@ -73,18 +68,12 @@ def test_model(model, device, testloader, loss_func, processed_dir):
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, 1.4, 1)
+                loss_func.weight = torch.where(label > 0, 2, 1)
                 soft_max_label = torch.where(label > 0, 1.0, 0.0)
                 #soft_max_label = torch.sigmoid(label)
                 loss1 = loss_func(output[batch == i], soft_max_label)
-
                 loss += loss1
-                accTOT, accPOS, falseN = get_accuracy(output[batch == i], soft_max_label)
-                tot_acc += accTOT
-                pos_acc += accPOS
-                false_neg += falseN
-                pos_acc_adj += get_accuracy_adjusted(output[batch == i], soft_max_label)
+                metrics(output[batch == i], soft_max_label)
                 number_rows += 1
 
-        return loss, (loss / number_rows), (tot_acc / number_rows), (
-                pos_acc / number_rows), (false_neg / number_rows), (pos_acc_adj / number_rows)
+        return loss, (loss / number_rows), metrics
