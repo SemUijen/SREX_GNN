@@ -58,8 +58,10 @@ class SREXmodel(nn.Module):
             end_idx = i1[:, None] + num_move[None, :]
             start_idx = i1[:, None]
             diff = (cumsum2[end_idx, :] - cumsum2[start_idx])
+            num_move_batch = num_move.repeat(num_routes)
+            embeddings = diff.view(-1, embedding_dim)
 
-            return diff.view(-1, embedding_dim), num_move.repeat(num_routes)
+            return embeddings/num_move_batch.unsqueeze(-1), num_move_batch
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
