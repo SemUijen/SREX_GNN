@@ -16,7 +16,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
     total_train_loss = 0
     number_of_rows = 0
     with tqdm(total=len(trainloader) - 1) as pbar:
-        # TODO Torch.unique for Full graph and send graph instance_idx to input model
+
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(trainloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
@@ -25,11 +25,10 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
             optimizer.zero_grad()
             output, batch = model(p1_data, p2_data, full_graph, instance_indices)
             loss = 0
-            # TODO: Average losses?
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, parameters["pos_weight"], 1)
+                loss_func.weight = get_weight(label, acc[i])
 
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
@@ -66,7 +65,7 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = torch.where(label > 0, parameters["pos_weight"], 1)
+                loss_func.weight = get_weight(label, acc[i])
 
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
@@ -80,3 +79,16 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
                 number_of_rows += 1
 
         return loss, (loss / number_of_rows), metrics
+
+def get_weight(label, acc_score):
+    tot = len(label)
+    pos = round((acc_score*len(label)).item())
+    neg = tot - pos
+
+    if pos==0 or neg ==0:
+        return torch.ones(label.shape)
+
+    pos_w = tot/(2*pos)
+    neg_w = tot/(2*neg)
+
+    return torch.where(label > 0, pos_w, neg_w)
