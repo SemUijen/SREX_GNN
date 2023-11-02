@@ -32,6 +32,7 @@ class Metrics():
         self.num_couples += 1
         self.get_confusion_matrix(prediction, label)
         self.get_accuracy_adjusted(prediction, label)
+        self.get_high_acc(prediction, label)
 
         self.calculate_scores()
 
