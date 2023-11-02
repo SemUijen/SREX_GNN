@@ -52,6 +52,8 @@ def main():
     print(trainset.get_accuracy_scores())
     print(testset.get_accuracy_scores())
 
+    f1_best = 0
+    select_acc = 0
     for epoch in range(nr_epochs):
         tot_train_loss, avg_train_loss, train_metric = train_model(model, device,
                                                                    train_loader, optimizer,
@@ -65,12 +67,24 @@ def main():
                                                                testset.processed_dir)
 
         print(
-            f'Epoch {epoch + 1} / {nr_epochs} [======] - train_loss(Tot, Avg): {"{:.2f}".format(tot_train_loss)}, \n'
+            f'Epoch {epoch + 1} / {nr_epochs} [======] - train_loss(Tot, Avg): {"{:.2f}".format(tot_train_loss)},'
             f' {"{:.2f}".format(avg_train_loss)} - test_loss : {"{:.2f}".format(avg_test_loss)}, \n'
             f"{train_metric} \n"
             f"{test_metric}")
 
-        torch.save(model.state_dict(), f'C:/SREX_GNN/data/model_data/model_states/SrexGNN_{epoch}')
+        if train_metric.f1 > f1_best or train_metric.select_acc > select_acc:
+
+            obj_dict = {"model_state": model.state_dict(),
+                        "Metrics_train": train_metric,
+                        "Metrics_test": test_metric,
+                        }
+            torch.save(obj_dict,
+                       f'{trainset.root}/model_states/SrexGNN_{epoch}_{"{:.2f}".format(train_metric.f1)}_{"{:.2f}".format(train_metric.select_acc)}')
+
+            if train_metric.f1 > f1_best:
+                f1_best = train_metric
+            if train_metric.select_acc > select_acc:
+                select_acc = train_metric.select_acc
 
 
 if __name__ == "__main__":
