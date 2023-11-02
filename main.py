@@ -7,9 +7,11 @@ from data.utils.BatchSampler import GroupSampler
 from train import train_model, test_model
 from Models import SREXmodel
 from data.utils.get_full_graph import get_full_graph
-
+import os
+import os.path as osp
 
 def main(parameters):
+    print(os.getcwd())
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     instances_VRP = ["X-n439-k37", "X-n393-k38", "X-n449-k29", "ORTEC-n405-k18", "ORTEC-n510-k23", "X-n573-k30"]
@@ -18,17 +20,18 @@ def main(parameters):
     instances = instances_VRP + instances_TW
 
     # Train_test split 772 cvrp files, 386 tw files FILE 88 331 are corrupted
-    training = list(range(0, 88)) + list(range(89, 200))
-    training = [0]
+    training = list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
+    test = list(range(618, 772))
     train_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in training]
     # train_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308)])
 
     # test_batches
-    test_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in range(1)]
+    test_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in test]
     # test_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308, 386)])
 
-    trainset = ParentGraphsDataset(root='C:/SREX_GNN/data/model_data', raw_files=train_file_names, instances=instances)
-    testset = ParentGraphsDataset(root='C:/SREX_GNN/data/model_data', raw_files=test_file_names, instances=instances)
+
+    trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names, instances=instances)
+    testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names, instances=instances)
 
     sampler = GroupSampler(data_length=len(trainset), group_size=36, batch_size=1)
     train_loader = MyDataLoader(dataset=trainset, batch_sampler=sampler, num_workers=0,
@@ -87,7 +90,6 @@ def main(parameters):
 
 if __name__ == "__main__":
     # TODO create parameters loop
-    # use different scalers: Binary Scaler
     # use different weights https://www.analyticsvidhya.com/blog/2020/10/improve-class-imbalance-class-weights/#h-what-are-class-weights
     # use different learning rate
     # check if more features are needed
@@ -96,13 +98,19 @@ if __name__ == "__main__":
 
     #Training Parameters
     parameters = {"learning_rate": 0.001,
-                  "pos_weight": 1.2,
+                  "pos_weight": 5,
                   "epochs": 2,
                   "binary_label": True,
-                  "run": 1,
+                  "run": 2,
                   "hidden_dim": 64,
                   "num_heads": 8,
     }
 
     main(parameters)
+
+
+
+
+
+
 
