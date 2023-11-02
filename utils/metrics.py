@@ -14,6 +14,7 @@ class Metrics():
         self.false_neg = 0
 
         self.adjusted_acc = 0
+        self.high_acc = 0
 
         self.tot_pos = 0
         self.tot_neg = 0
@@ -24,6 +25,7 @@ class Metrics():
         self.recall = 0
 
         self.select_acc = 0
+        self.select_high = 0
 
     def __call__(self, prediction: Tensor, label: Tensor):
 
@@ -42,6 +44,9 @@ class Metrics():
         if self.adjusted_acc > 0:
             self.select_acc = self.adjusted_acc / self.num_couples
 
+        if self.high_acc > 0:
+            self.select_high = self.high_acc/self.num_couples
+
     def get_accuracy_adjusted(self, prediction: Tensor, label: Tensor) -> float:
 
         max_prob = torch.where(prediction == prediction.max())[0]
@@ -52,6 +57,11 @@ class Metrics():
         else:
             if label.max() == 0:
                 self.adjusted_acc += 1
+
+    def get_high_acc(self, prediction: Tensor, label: Tensor):
+        max_prob = torch.where(prediction == prediction.max())[0]
+        if label[max_prob[0]] == 1:
+            self.high_acc += 1
 
     def get_confusion_matrix(self, prediction: Tensor, label: Tensor) -> None:
         binary_predict = torch.where(prediction > 0.5, 1, 0)
@@ -110,4 +120,6 @@ class Metrics():
                 f" recall = {self.recall} \n"
                 f" F1_score = {self.f1} \n"
                 f"\n"
-                f" select_acc = {self.select_acc}")
+                f" select_acc = {self.select_acc} \n"
+                f" select_high = {self.select_high}")
+
