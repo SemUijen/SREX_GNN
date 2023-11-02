@@ -61,7 +61,7 @@ class SREXmodel(nn.Module):
             num_move_batch = num_move.repeat(num_routes)
             embeddings = diff.view(-1, embedding_dim)
 
-            return embeddings/num_move_batch.unsqueeze(-1), num_move_batch
+            return embeddings/num_move_batch.unsqueeze(-1).to(device), num_move_batch
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
