@@ -30,6 +30,8 @@ class Metrics():
         self.get_confusion_matrix(prediction, label)
         self.get_accuracy_adjusted(prediction, label)
 
+        self.calculate_scores()
+
     def calculate_scores(self):
         if self.true_pos > 0:
             self.recall = self.true_pos / (self.true_pos + self.false_neg)
