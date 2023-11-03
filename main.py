@@ -50,8 +50,8 @@ def main(parameters):
     loss_func = nn.BCELoss(reduction='mean')
 
     nr_epochs = parameters["epochs"]
-    print(trainset.get_accuracy_scores())
-    print(testset.get_accuracy_scores())
+    print('train_acc: ', trainset.get_accuracy_scores())
+    print('test_acc: ', testset.get_accuracy_scores())
     f1_best = 0
     select_acc = 0
     for epoch in range(nr_epochs):
