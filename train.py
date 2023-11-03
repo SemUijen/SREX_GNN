@@ -10,6 +10,7 @@ from data.utils.get_full_graph import get_full_graph
 
 def train_model(model, device, trainloader, optimizer, loss_func, processed_dir, parameters):
     scaler = SigmoidVectorizedScaler(20, device)
+    weights = Weights(parameters['strong'])
     metrics = Metrics("Train")
     print(f'Training on {len(trainloader)} batches.....')
     model.train()
@@ -31,7 +32,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = conf_matrix_weight(label, acc[i], device)
+                loss_func.weight = weights(label, output[batch == i], acc[i], device)
 
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
@@ -54,6 +55,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
 
 def test_model(model, device, testloader, loss_func, processed_dir, parameters):
     scaler = SigmoidVectorizedScaler(20, device)
+    weights = Weights(parameters['strong'])
     metrics = Metrics("test")
     model.eval()
     loss = 0
@@ -72,7 +74,7 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = conf_matrix_weight(label, acc[i], device)
+                loss_func.weight = weights(label, output[batch == i], acc[i], device)
 
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
@@ -89,35 +91,43 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
         return loss, (loss / number_of_rows), metrics
 
 
-def get_weight_strong(label, acc_score, device):
-    tot = len(label)
-    pos = round((acc_score * len(label)).item())
-    neg = tot - pos
+class Weights:
 
-    if pos == 0 or neg == 0:
-        return torch.ones(label.shape, device=device)
+    def __init__(self, strong: bool):
+        self.strong = strong
 
-    pos_w = tot / (2 * pos)
-    neg_w = tot / (2 * neg)
+    def __call__(self, label, prediction, acc_score, device):
 
-    weights = torch.where(label > 0, pos_w, neg_w).to(device)
-    return weights
+        if self.strong:
+            return self.get_weight_strong(label, acc_score, device)
+        else:
+            return self.conf_matrix_weight(label, prediction, device)
 
+    def get_weight_strong(self, label, acc_score, device):
+        tot = len(label)
+        pos = round((acc_score * len(label)).item())
+        neg = tot - pos
 
-def conf_matrix_weight(label, prediction, device):
-    binary_predict = torch.where(prediction > 0.5, 1, 0)
-    binary_label = torch.where(label > 0, 1, 0)
-    equality = torch.eq(binary_predict, binary_label)
+        if pos == 0 or neg == 0:
+            return torch.ones(label.shape, device=device)
 
-    weight = torch.ones(label.shape, device=device)
-    pos_pred = equality[binary_predict.nonzero()]
-    if len(pos_pred) == 0:
-        pos_acc = 1
-    else:
-        weight[torch.where(pos_pred == False)[0]] = 1.5
+        pos_w = tot / (2 * pos)
+        neg_w = tot / (2 * neg)
 
-    weight[torch.where(label > 0)] = 2
-    return weight
+        weights = torch.where(label > 0, pos_w, neg_w).to(device)
+        return weights
 
+    def conf_matrix_weight(self, label, prediction, device):
+        binary_predict = torch.where(prediction > 0.5, 1, 0)
+        binary_label = torch.where(label > 0, 1, 0)
+        equality = torch.eq(binary_predict, binary_label)
 
+        weight = torch.ones(label.shape, device=device)
+        pos_pred = equality[binary_predict.nonzero()]
+        if len(pos_pred) == 0:
+            pos_acc = 1
+        else:
+            weight[torch.where(pos_pred == False)[0]] = 1.5
 
+        weight[torch.where(label > 0)] = 2
+        return weight

@@ -19,10 +19,8 @@ def main(parameters):
     instances = instances_VRP + instances_TW
 
     # Train_test split 772 cvrp files, 386 tw files FILE 88 331 are corrupted
-    #training = list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
-    #test = list(range(618, 772))
-    training = [0,1,2,3]
-    test = [4]
+    training = list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
+    test = list(range(618, 772))
     train_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in training]
     # train_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308)])
 
@@ -44,7 +42,7 @@ def main(parameters):
 
     model = SREXmodel(num_node_features=trainset.num_node_features, hidden_dim=parameters["hidden_dim"], num_heads=parameters['num_heads'])
     model.to(device)
-
+    print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=parameters["learning_rate"])
 
     loss_func = nn.BCELoss(reduction='mean')
@@ -54,6 +52,7 @@ def main(parameters):
     print('test_acc: ', testset.get_accuracy_scores())
     f1_best = 0
     select_acc = 0
+    select_high = 0
     for epoch in range(nr_epochs):
         tot_train_loss, avg_train_loss, train_metric = train_model(model, device,
                                                                    train_loader, optimizer,
@@ -74,7 +73,7 @@ def main(parameters):
             f"{train_metric} \n"
             f"{test_metric}")
 
-        if train_metric.f1 > f1_best or train_metric.select_acc > select_acc:
+        if train_metric.f1 > f1_best or train_metric.select_acc > select_acc or train_metric.select_high > select_high:
 
             obj_dict = {"model_state": model.state_dict(),
                         "Metrics_train": train_metric,
@@ -87,6 +86,8 @@ def main(parameters):
                 f1_best = train_metric.f1
             if train_metric.select_acc > select_acc:
                 select_acc = train_metric.select_acc
+            if train_metric.select_high > select_high:
+                select_high = train_metric.select_high
 
 
 if __name__ == "__main__":
@@ -106,6 +107,7 @@ if __name__ == "__main__":
                   "hidden_dim": 64,
                   "num_heads": 12,
                   "fullgraph": True,
+                  "strong": True,
     }
 
     main(parameters)
