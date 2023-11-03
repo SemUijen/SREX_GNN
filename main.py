@@ -5,7 +5,7 @@ from data.utils.ParentGraphDataset import ParentGraphsDataset
 from data.utils.DataLoader import MyDataLoader, MyCollater
 from data.utils.BatchSampler import GroupSampler
 from train import train_model, test_model
-from Models import SREXmodel, SREXmodel2
+removed from Models import SREXmodel
 from data.utils.get_full_graph import get_full_graph
 import os
 import os.path as osp
