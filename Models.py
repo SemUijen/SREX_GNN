@@ -27,7 +27,7 @@ class SREXmodel(nn.Module):
         # TODO: add gat model for FULL Graph
 
         # TODO: Add extra layers
-        self.fc1 = nn.Linear(2 * self.num_heads * self.hidden_dim, self.num_heads * self.hidden_dim)
+        self.fc1 = nn.Linear(4 * self.num_heads * self.hidden_dim, self.num_heads * self.hidden_dim)
         self.fc2 = nn.Linear(self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim / 2))
         self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 2), 1)
 
@@ -52,15 +52,26 @@ class SREXmodel(nn.Module):
             route_embeddings2 = torch.cat((route_embeddings, route_embeddings), 0)
             cumsum2 = torch.cat((torch.zeros(1, embedding_dim, device=device), torch.cumsum(route_embeddings2, 0)), 0)
 
+            #routes that are moved
             i1 = torch.arange(num_routes)
             num_move = torch.arange(1, max_move + 1)
             end_idx = i1[:, None] + num_move[None, :]
             start_idx = i1[:, None]
             diff = (cumsum2[end_idx, :] - cumsum2[start_idx])
             num_move_batch = num_move.repeat(num_routes)
-            embeddings = diff.view(-1, embedding_dim)
+            embeddings_moved = diff.view(-1, embedding_dim)
+            # embeddings_moved = embeddings_moved/num_move_batch.unsqueeze(-1).to(device)
 
-            return embeddings / num_move_batch.unsqueeze(-1).to(device), num_move_batch
+            # Routes that are not moved
+            i2 = torch.arange(1, num_routes + 1)
+            num_move2 = torch.flip(torch.arange(num_routes - max_move, num_routes), dims=(0,))
+            end_idx2 = i2[:, None] + num_move2[None, :]
+            start_idx2 = i2[:, None]
+            diff2 = (cumsum2[end_idx2, :] - cumsum2[start_idx2])
+            embeddings_others = diff2.view(-1, embedding_dim)
+            # embeddings_others = embeddings_others / num_move2.unsqueeze(-1).to(device)
+
+            return torch.cat((embeddings_moved, embeddings_others), dim=1), num_move_batch
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
@@ -135,9 +146,6 @@ class SREXmodel(nn.Module):
         out = self.fc2(out)
         out = self.relu(out)
         out = self.dropout(out)
-        out = self.fc3(out)
-        out = self.relu(out)
-        out = self.dropout(out)
         out = self.head(out)
         probs = self.sigmoid(out)
 
@@ -189,15 +197,26 @@ class SREXmodel2(nn.Module):
             route_embeddings2 = torch.cat((route_embeddings, route_embeddings), 0)
             cumsum2 = torch.cat((torch.zeros(1, embedding_dim, device=device), torch.cumsum(route_embeddings2, 0)), 0)
 
+            #routes that are moved
             i1 = torch.arange(num_routes)
             num_move = torch.arange(1, max_move + 1)
             end_idx = i1[:, None] + num_move[None, :]
             start_idx = i1[:, None]
             diff = (cumsum2[end_idx, :] - cumsum2[start_idx])
             num_move_batch = num_move.repeat(num_routes)
-            embeddings = diff.view(-1, embedding_dim)
+            embeddings_moved = diff.view(-1, embedding_dim)
+            # embeddings_moved = embeddings_moved/num_move_batch.unsqueeze(-1).to(device)
 
-            return embeddings / num_move_batch.unsqueeze(-1).to(device), num_move_batch
+            # Routes that are not moved
+            i2 = torch.arange(1, num_routes + 1)
+            num_move2 = torch.flip(torch.arange(num_routes - max_move, num_routes), dims=(0,))
+            end_idx2 = i2[:, None] + num_move2[None, :]
+            start_idx2 = i2[:, None]
+            diff2 = (cumsum2[end_idx2, :] - cumsum2[start_idx2])
+            embeddings_others = diff2.view(-1, embedding_dim)
+            # embeddings_others = embeddings_others / num_move2.unsqueeze(-1).to(device)
+
+            return torch.cat(embeddings_moved, embeddings_others), num_move_batch
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
