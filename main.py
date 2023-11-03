@@ -11,7 +11,6 @@ import os
 import os.path as osp
 
 def main(parameters):
-    print(os.getcwd())
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     instances_VRP = ["X-n439-k37", "X-n393-k38", "X-n449-k29", "ORTEC-n405-k18", "ORTEC-n510-k23", "X-n573-k30"]
@@ -20,8 +19,10 @@ def main(parameters):
     instances = instances_VRP + instances_TW
 
     # Train_test split 772 cvrp files, 386 tw files FILE 88 331 are corrupted
-    training = list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
-    test = list(range(618, 772))
+    #training = list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
+    #test = list(range(618, 772))
+    training = [0,1,2,3]
+    test = [4]
     train_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in training]
     # train_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308)])
 
@@ -30,8 +31,8 @@ def main(parameters):
     # test_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308, 386)])
 
 
-    trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names, instances=instances)
-    testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names, instances=instances)
+    trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names, instances=instances, is_processed=True)
+    testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names, instances=instances, is_processed=True)
 
     sampler = GroupSampler(data_length=len(trainset), group_size=36, batch_size=1)
     train_loader = MyDataLoader(dataset=trainset, batch_sampler=sampler, num_workers=0,
@@ -41,7 +42,7 @@ def main(parameters):
     test_loader = MyDataLoader(dataset=testset, batch_sampler=sampler, num_workers=0,
                                    collate_fn=MyCollater(None, None))
 
-    model = SREXmodel2(num_node_features=trainset.num_node_features, hidden_dim=parameters["hidden_dim"], num_heads=parameters['num_heads'])
+    model = SREXmodel(num_node_features=trainset.num_node_features, hidden_dim=parameters["hidden_dim"], num_heads=parameters['num_heads'])
     model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=parameters["learning_rate"])
@@ -99,12 +100,12 @@ if __name__ == "__main__":
     #Training Parameters
     parameters = {"learning_rate": 0.00001,
                   "pos_weight": 5,
-                  "epochs": 2,
+                  "epochs": 10,
                   "binary_label": True,
                   "run": 2,
                   "hidden_dim": 64,
-                  "num_heads": 8,
-                  "fullgraph": False,
+                  "num_heads": 12,
+                  "fullgraph": True,
     }
 
     main(parameters)
