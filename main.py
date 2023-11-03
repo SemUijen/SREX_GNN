@@ -105,9 +105,9 @@ if __name__ == "__main__":
                   "binary_label": True,
                   "run": 2,
                   "hidden_dim": 64,
-                  "num_heads": 12,
+                  "num_heads": 2,
                   "fullgraph": True,
-                  "strong": True,
+                  "weight": None,
     }
 
     main(parameters)

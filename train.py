@@ -10,7 +10,7 @@ from data.utils.get_full_graph import get_full_graph
 
 def train_model(model, device, trainloader, optimizer, loss_func, processed_dir, parameters):
     scaler = SigmoidVectorizedScaler(20, device)
-    weights = Weights(parameters['strong'])
+    weights = Weights(parameters['weight'])
     metrics = Metrics("Train")
     print(f'Training on {len(trainloader)} batches.....')
     model.train()
@@ -55,7 +55,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
 
 def test_model(model, device, testloader, loss_func, processed_dir, parameters):
     scaler = SigmoidVectorizedScaler(20, device)
-    weights = Weights(parameters['strong'])
+    weights = Weights(parameters['weight'])
     metrics = Metrics("test")
     model.eval()
     loss = 0
@@ -93,14 +93,18 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
 
 class Weights:
 
-    def __init__(self, strong: bool):
-        self.strong = strong
+    def __init__(self, weight_type: bool):
+        self.weight_type = weight_type
 
     def __call__(self, label, prediction, acc_score, device):
 
-        if self.strong:
+        if self.weight_type is None:
+            return torch.ones(label.shape, device=device)
+
+        if self.weight_type == "strong":
             return self.get_weight_strong(label, acc_score, device)
-        else:
+
+        if self.weight_type == "confuse":
             return self.conf_matrix_weight(label, prediction, device)
 
     def get_weight_strong(self, label, acc_score, device):
