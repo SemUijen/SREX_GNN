@@ -5,7 +5,7 @@ from data.utils.ParentGraphDataset import ParentGraphsDataset
 from data.utils.DataLoader import MyDataLoader, MyCollater
 from data.utils.BatchSampler import GroupSampler
 from train import train_model, test_model
-from Models import SREXmodel
+from Models import SREXmodel, SREXmodel2
 from data.utils.get_full_graph import get_full_graph
 import os
 import os.path as osp
@@ -41,7 +41,7 @@ def main(parameters):
     test_loader = MyDataLoader(dataset=testset, batch_sampler=sampler, num_workers=0,
                                    collate_fn=MyCollater(None, None))
 
-    model = SREXmodel(num_node_features=trainset.num_node_features, hidden_dim=parameters["hidden_dim"], num_heads=parameters['num_heads'])
+    model = SREXmodel2(num_node_features=trainset.num_node_features, hidden_dim=parameters["hidden_dim"], num_heads=parameters['num_heads'])
     model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=parameters["learning_rate"])
@@ -97,13 +97,14 @@ if __name__ == "__main__":
     # TODO average summed routes
 
     #Training Parameters
-    parameters = {"learning_rate": 0.001,
+    parameters = {"learning_rate": 0.00001,
                   "pos_weight": 5,
                   "epochs": 2,
                   "binary_label": True,
                   "run": 2,
                   "hidden_dim": 64,
                   "num_heads": 8,
+                  "fullgraph": False,
     }
 
     main(parameters)

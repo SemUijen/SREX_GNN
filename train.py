@@ -20,10 +20,13 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(trainloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
-            full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
-            full_graph = full_graph.to(device)
+            if parameters["fullgraph"]:
+                full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
+                full_graph = full_graph.to(device)
+                output, batch = model(p1_data, p2_data, full_graph, instance_indices)
+            else:
+                output, batch = model(p1_data, p2_data)
             optimizer.zero_grad()
-            output, batch = model(p1_data, p2_data, full_graph, instance_indices)
             loss = 0
 
             for i in range(len(p1_data)):
@@ -59,9 +62,13 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(testloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
-            full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
-            full_graph = full_graph.to(device)
-            output, batch = model(p1_data, p2_data, full_graph, instance_indices)
+
+            if parameters["fullgraph"]:
+                full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
+                full_graph = full_graph.to(device)
+                output, batch = model(p1_data, p2_data, full_graph, instance_indices)
+            else:
+                output, batch = model(p1_data, p2_data)
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)

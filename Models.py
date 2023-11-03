@@ -60,7 +60,7 @@ class SREXmodel(nn.Module):
             num_move_batch = num_move.repeat(num_routes)
             embeddings = diff.view(-1, embedding_dim)
 
-            return embeddings/num_move_batch.unsqueeze(-1).to(device), num_move_batch
+            return embeddings / num_move_batch.unsqueeze(-1).to(device), num_move_batch
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
@@ -112,13 +112,15 @@ class SREXmodel(nn.Module):
         full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
 
         for fg_idx in range(len(full_graph)):
-            repeat = int(len(instance_batch[instance_batch==fg_idx])/len(full_embedding[full_graph.batch==fg_idx]))
-            P1_embedding[instance_batch==fg_idx] = torch.add(P1_embedding[instance_batch==fg_idx],
-                                                             full_embedding[full_graph.batch==fg_idx].repeat(repeat,1))
+            repeat = int(
+                len(instance_batch[instance_batch == fg_idx]) / len(full_embedding[full_graph.batch == fg_idx]))
+            P1_embedding[instance_batch == fg_idx] = torch.add(P1_embedding[instance_batch == fg_idx],
+                                                               full_embedding[full_graph.batch == fg_idx].repeat(repeat,
+                                                                                                                 1))
 
-            P2_embedding[instance_batch==fg_idx] = torch.add(P2_embedding[instance_batch==fg_idx],
-                                                             full_embedding[full_graph.batch==fg_idx].repeat(repeat,1))
-
+            P2_embedding[instance_batch == fg_idx] = torch.add(P2_embedding[instance_batch == fg_idx],
+                                                               full_embedding[full_graph.batch == fg_idx].repeat(repeat,
+                                                                                                                 1))
 
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
@@ -146,7 +148,7 @@ class SREXmodel2(nn.Module):
 
     def __init__(self, num_node_features: int, hidden_dim: int = 64, num_heads: int = 8,
                  dropout: float = 0.2):
-        super(SREXmodel, self).__init__()
+        super(SREXmodel2, self).__init__()
 
         self.num_node_features = num_node_features
         self.hidden_dim = hidden_dim
@@ -155,15 +157,14 @@ class SREXmodel2(nn.Module):
         # the NN learning the representation of Parent solutions with Node = Customer
         self.GAT_SolutionGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
                                          heads=self.num_heads, dropout=dropout)
-        self.GAT_SolutionGraph1 = GATConv(in_channels=self.num_heads * self.hidden_dim, out_channels=2*self.num_heads * self.hidden_dim,
-                                         heads=self.num_heads, dropout=dropout)
+        self.GAT_SolutionGraph2 = GATConv(in_channels=self.num_heads * self.hidden_dim,
+                                          out_channels=2 * self.hidden_dim,
+                                          heads=self.num_heads, dropout=dropout)
 
         self.relu = nn.LeakyReLU()
         self.dropout = nn.Dropout(dropout)
 
-
-
-        self.fc1 = nn.Linear(4 * self.num_heads * self.hidden_dim, self.num_heads * self.hidden_dim)
+        self.fc1 = nn.Linear(2 * self.num_heads * 2 * self.hidden_dim, self.num_heads * self.hidden_dim)
         self.fc2 = nn.Linear(self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim / 2))
         self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 2), 1)
 
@@ -196,7 +197,7 @@ class SREXmodel2(nn.Module):
             num_move_batch = num_move.repeat(num_routes)
             embeddings = diff.view(-1, embedding_dim)
 
-            return embeddings/num_move_batch.unsqueeze(-1).to(device), num_move_batch
+            return embeddings / num_move_batch.unsqueeze(-1).to(device), num_move_batch
 
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
@@ -241,15 +242,13 @@ class SREXmodel2(nn.Module):
                                               edge_attr=P1_edgeFeatures)
         P1_embedding = self.relu(P1_embedding)
         P1_embedding = self.GAT_SolutionGraph2(x=P1_embedding, edge_index=P1_edge_index,
-                                              edge_attr=P1_edgeFeatures)
+                                               edge_attr=P1_edgeFeatures)
         P1_embedding = self.relu(P1_embedding)
         # Node(Customer) Embedding Parent2 (Current setup is without whole graph)
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
         P2_embedding = self.relu(P2_embedding)
         P2_embedding = self.GAT_SolutionGraph2(x=P2_embedding, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
         P2_embedding = self.relu(P2_embedding)
-
-
 
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
@@ -268,6 +267,3 @@ class SREXmodel2(nn.Module):
         probs = self.sigmoid(out)
 
         return probs.flatten(), PtoP_batch
-
-
-
