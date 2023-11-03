@@ -4,7 +4,7 @@ from torch_geometric.nn import GATConv
 from torch_geometric.data import Data
 from torch.nn.functional import pad, softmax
 from torch import Tensor
-
+from torch_geometric.nn.norm import BatchNorm
 
 class SREXmodel(nn.Module):
 
@@ -26,6 +26,7 @@ class SREXmodel(nn.Module):
         self.dropout = nn.Dropout(dropout)
         # TODO: add gat model for FULL Graph
 
+        self.PtoPNorm = BatchNorm(4 * self.num_heads * self.hidden_dim)
         # TODO: Add extra layers
         self.fc1 = nn.Linear(4 * self.num_heads * self.hidden_dim, self.num_heads * self.hidden_dim)
         self.fc2 = nn.Linear(self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim / 2))
@@ -140,6 +141,7 @@ class SREXmodel(nn.Module):
         # TODO: after the PtoP embeddings the linear layers look at each combination seperatly but technically they are not seperate
         # TODO Add extra linear layers
         # linear layers
+        PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
         out = self.fc1(PtoP_embeddings)
         out = self.relu(out)
         out = self.dropout(out)
