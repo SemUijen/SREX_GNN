@@ -111,7 +111,17 @@ class ParentGraphsDataset(Dataset):
 
         return p1_data, p2_data, label, instance_idx, torch.tensor(acc)
 
-    def get_accuracy_scores(self) -> Tuple[float, float]:
+    def get_accuracy_scores(self) -> str:
         limit_acc = sum(self.accuracy_limit) / len(self)
         random_acc = sum(self.accuracy) / len(self)
-        return limit_acc, random_acc
+
+        pos_acc = len(torch.nonzero(torch.tensor(self.accuracy))) / len(self)
+        lim_pos_acc = len(torch.nonzero(torch.tensor(self.accuracy_limit))) / len(self)
+
+        return ("\n"
+                F" random acc (pos):        {random_acc} \n"
+                F" lim random acc (pos):    {limit_acc} \n"
+                F" Parents with improv:     {pos_acc} \n"
+                F" lim Parent with improv:  {lim_pos_acc}")
+
+    
