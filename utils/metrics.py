@@ -111,7 +111,7 @@ class Metrics():
     def __str__(self):
 
         return (f"Metrics {self.name}: \n"
-                f" TP= {self.true_pos} \n"
+                f" TP = {self.true_pos} \n"
                 f" FP = {self.false_pos} \n"
                 f" TN = {self.true_neg} \n"
                 f" FN = {self.false_neg} \n"
