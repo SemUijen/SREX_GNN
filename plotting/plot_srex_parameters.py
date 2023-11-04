@@ -14,7 +14,7 @@ def plot_parameters_2D(
         ax: Optional[plt.Axes] = None,
         cmap: Optional[Colormap] = None):
     if not cmap:
-        cmap = plt.colormaps["brg"]
+        cmap = plt.colormaps["RdYlGn"]
 
     if not ax:
         _, ax = plt.subplots()
@@ -33,7 +33,7 @@ def plot_parameters_3D(
         ax: Optional[plt.Axes] = None,
         cmap: Optional[Colormap] = None):
     if not cmap:
-        cmap = plt.colormaps["brg"]
+        cmap = plt.colormaps["RdYlGn"]
 
     if not ax:
         _, ax = plt.subplots()
@@ -51,8 +51,9 @@ def plot_srex_parameters(
         fig: Optional[plt.figure] = None,
         cmap: Optional[Colormap] = None,
 ) -> None:
+
     if not cmap:
-        cmap = plt.colormaps["brg"]
+        cmap = plt.colormaps["RdYlGn"]
 
     if not fig:
         fig = plt.figure(figsize=(20, 12))
@@ -66,9 +67,9 @@ def plot_srex_parameters(
 
     plot_parameters_2D(p1, p2, col, ('p1_idx', 'p2_idx'), ax=fig.add_subplot(gs[0, 0]))
     plot_parameters_2D(p1, move, col, ('p1_idx', 'NumMoved'), ax=fig.add_subplot(gs[1, 0]))
-    plot_parameters_2D(p2, move, col, ('p1_idx', 'NumMoved'), ax=fig.add_subplot(gs[2, 0]))
+    plot_parameters_2D(p2, move, col, ('p2_idx', 'NumMoved'), ax=fig.add_subplot(gs[2, 0]))
 
-    clm = plot_parameters_3D(p1, p2, move, col, axis_labels=('p1_idx', 'p1_idx', 'NumMoved'),
+    clm = plot_parameters_3D(p1, p2, move, col, axis_labels=('p1_idx', 'p2_idx', 'NumMoved'),
                              ax=fig.add_subplot(gs[:, 1], projection="3d"))
 
     fig.colorbar(clm)
