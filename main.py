@@ -5,13 +5,14 @@ from data.utils.ParentGraphDataset import ParentGraphsDataset
 from data.utils.DataLoader import MyDataLoader, MyCollater
 from data.utils.BatchSampler import GroupSampler
 from train import train_model, test_model
-removed from Models import SREXmodel
+from Models import SREXmodel
 from data.utils.get_full_graph import get_full_graph
 import os
 import os.path as osp
 
 def main(parameters):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    torch.manual_seed(42)
 
     instances_VRP = ["X-n439-k37", "X-n393-k38", "X-n449-k29", "ORTEC-n405-k18", "ORTEC-n510-k23", "X-n573-k30"]
     instances_TW = ["ORTEC-VRPTW-ASYM-0bdff870-d1-n458-k35", "R2_8_9", 'R1_4_10']
@@ -28,9 +29,10 @@ def main(parameters):
     test_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in test]
     # test_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308, 386)])
 
-
-    trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names, instances=instances, is_processed=True)
-    testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names, instances=instances, is_processed=True)
+    trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names,
+                                   instances=instances, is_processed=True)
+    testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names,
+                                  instances=instances, is_processed=True)
 
     sampler = GroupSampler(data_length=len(trainset), group_size=36, batch_size=1)
     train_loader = MyDataLoader(dataset=trainset, batch_sampler=sampler, num_workers=0,
@@ -91,24 +93,20 @@ def main(parameters):
 
 
 if __name__ == "__main__":
-    # TODO create parameters loop
-    # use different weights https://www.analyticsvidhya.com/blog/2020/10/improve-class-imbalance-class-weights/#h-what-are-class-weights
-    # use different learning rate
-    # check if more features are needed
-    # Check what is happening with sigmoid output
-    # TODO average summed routes
+    # TODO Add potential accuracy if acc > 0: 1 else 0 divide by total number
+    # todo use larger learning rates =>0.00006?
 
-    #Training Parameters
-    parameters = {"learning_rate": 0.00001,
-                  "pos_weight": 5,
-                  "epochs": 10,
+    # Training Parameters
+    parameters = {"learning_rate": 0.005,
+                  "pos_weight": 6,
+                  "epochs": 30,
                   "binary_label": True,
                   "run": 2,
-                  "hidden_dim": 64,
-                  "num_heads": 2,
+                  "hidden_dim": 16,
+                  "num_heads": 24,
                   "fullgraph": True,
-                  "weight": None,
-    }
+                  "weight": 'confuse',
+                  }
 
     main(parameters)
 
