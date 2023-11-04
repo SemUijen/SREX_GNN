@@ -30,7 +30,8 @@ class SREXmodel(nn.Module):
         # TODO: Add extra layers
         self.fc1 = nn.Linear(4 * self.num_heads * self.hidden_dim, self.num_heads * self.hidden_dim)
         self.fc2 = nn.Linear(self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim / 2))
-        self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 2), 1)
+        self.fc3 = nn.Linear(int(self.num_heads * self.hidden_dim / 2), int(self.num_heads * self.hidden_dim / 4))
+        self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 4), 1)
 
         self.sigmoid = nn.Sigmoid()
 
@@ -146,6 +147,9 @@ class SREXmodel(nn.Module):
         out = self.relu(out)
         out = self.dropout(out)
         out = self.fc2(out)
+        out = self.relu(out)
+        out = self.dropout(out)
+        out = self.fc3(out)
         out = self.relu(out)
         out = self.dropout(out)
         out = self.head(out)
