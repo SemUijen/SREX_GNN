@@ -56,7 +56,6 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
                 if i == 11:
                     break
 
-            print(output[:temp_lab.shape[0]].shape, temp_lab.shape, temp_weight.shape)
             loss_func.weight = temp_weight
             loss = loss_func(output[:temp_lab.shape[0]], temp_lab)
 
