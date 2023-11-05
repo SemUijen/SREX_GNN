@@ -31,10 +31,11 @@ class SolutionTransformer:
         capacity = instance.vehicle_type(0).capacity
         num_veh = instance.num_vehicles
 
-        for client_nr in range(instance.num_clients + 1):
+        for client_nr in range(1, instance.num_clients + 1):
             client = instance.client(client_nr)
             client_features.append(
-                [client.x, client.y, client.tw_late, client.tw_early, client.demand, client.service_duration, capacity, num_veh])
+                [client.x, client.y, client.demand, capacity, num_veh])
+
 
         return torch.tensor(client_features, dtype=torch.float)
 
@@ -47,24 +48,27 @@ class SolutionTransformer:
     def get_adj_matrix_from_solution(solution: Solution) -> Tensor:
         num_nodes = len(solution.get_neighbours())
         neighbours1 = solution.get_neighbours()
-        graph_edge_matrix_sol1 = np.zeros(shape=(num_nodes, num_nodes), dtype="int64")
+        graph_edge_matrix_sol1 = np.zeros(shape=(num_nodes-1, num_nodes-1), dtype="int64")
 
-        for i in range(1, num_nodes):
+        for i in range(1, num_nodes-1):
             fN_sol1, sN_sol1 = neighbours1[i]
+            if fN_sol1-1 >= 0:
+                graph_edge_matrix_sol1[(fN_sol1-1, i-1)] = 1
+            if sN_sol1-1 >= 0:
+                graph_edge_matrix_sol1[(i-1, sN_sol1-1)] = 1
 
-            graph_edge_matrix_sol1[(fN_sol1, i)] = 1
-            graph_edge_matrix_sol1[(i, sN_sol1)] = 1
 
         return torch.tensor(graph_edge_matrix_sol1)
 
     @staticmethod
     def get_client_to_route_vector(solution: Solution) -> Tensor:
-        vector = np.zeros(shape=(solution.num_clients() + 1))
+        vector = np.zeros(shape=(solution.num_clients()))
         route_nr = 0
 
         for route in solution.get_routes():
             for client in route:
-                vector[client] = route_nr
+
+                vector[client-1] = route_nr
 
             route_nr += 1
 
@@ -81,10 +85,10 @@ class SolutionTransformer:
 
         # edge_attr
         edge_features = self.get_edge_features_from_instance(instance)
-        ## parent1
-        row, col = edge_index
-        edge_weight = edge_features[row, col]
 
+        #edge_weight
+        row, col = edge_index
+        edge_weight = edge_features[1:, 1:][row, col]
         # total number of routes
         num_routes = solution.num_routes()
         client_features = self.get_node_features(instance)
@@ -98,12 +102,12 @@ class SolutionTransformer:
 
         # number of nodes are total clients + depot
         num_nodes = instance.num_clients + 1
-        fully_connected = np.ones(shape=(num_nodes, num_nodes), dtype="int64")
+        fully_connected = np.ones(shape=(num_nodes-1, num_nodes-1), dtype="int64")
         fully_connected = torch.tensor(fully_connected)
 
         edge_index = fully_connected.nonzero().t()
         row, col = edge_index
-        edge_weight = edge_features[row, col]
+        edge_weight = edge_features[1:, 1:][row, col]
 
         return edge_index, edge_weight, client_features
 
