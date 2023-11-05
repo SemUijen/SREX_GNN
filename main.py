@@ -91,6 +91,7 @@ def main(parameters):
             if train_metric.select_high > select_high:
                 select_high = train_metric.select_high
 
+    return result
 
 if __name__ == "__main__":
     # TODO Add potential accuracy if acc > 0: 1 else 0 divide by total number
