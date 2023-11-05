@@ -50,8 +50,8 @@ def plot_srex_parameters(
         parameter_array,
         fig: Optional[plt.figure] = None,
         cmap: Optional[Colormap] = None,
+        title: Optional[str] = None,
 ) -> None:
-
     if not cmap:
         cmap = plt.colormaps["RdYlGn"]
 
@@ -72,8 +72,10 @@ def plot_srex_parameters(
     clm = plot_parameters_3D(p1, p2, move, col, axis_labels=('p1_idx', 'p2_idx', 'NumMoved'),
                              ax=fig.add_subplot(gs[:, 1], projection="3d"))
 
+    if not title:
+        title = ""
+
+    fig.suptitle(f"SREX Configuration: {title}", fontsize=16)
     fig.colorbar(clm)
     fig.tight_layout()
     fig.show()
-
-
