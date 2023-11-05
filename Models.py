@@ -149,9 +149,6 @@ class SREXmodel(nn.Module):
         out = self.fc2(out)
         out = self.relu(out)
         out = self.dropout(out)
-        out = self.fc3(out)
-        out = self.relu(out)
-        out = self.dropout(out)
         out = self.head(out)
         probs = self.sigmoid(out)
 
