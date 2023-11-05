@@ -48,6 +48,9 @@ class SREXmodel(nn.Module):
             node_to_route_matrix = torch.zeros(number_of_customers, graph_data.num_routes[batch_idx], device=device)
             node_to_route_matrix[torch.arange(number_of_customers).long(), node_to_route_vector.long()] = 1
             route_embedding = torch.matmul(node_to_route_matrix.t(), embeddings[batch_indices == batch_idx])
+
+            nodes_per_route = torch.sum(node_to_route_matrix.t(), 1).unsqueeze(-1)
+            route_embedding = route_embedding / nodes_per_route
             return route_embedding
 
         def transform_to_nrRoutes(route_embeddings, max_move):
@@ -66,7 +69,7 @@ class SREXmodel(nn.Module):
             diff = (cumsum2[end_idx, :] - cumsum2[start_idx])
             num_move_batch = num_move.repeat(num_routes)
             embeddings_moved = diff.view(-1, embedding_dim)
-            # embeddings_moved = embeddings_moved/num_move_batch.unsqueeze(-1).to(device)
+            embeddings_moved = embeddings_moved/num_move_batch.unsqueeze(-1).to(device)
 
             # Routes that are not moved
             i2 = torch.arange(1, num_routes + 1)
@@ -75,7 +78,9 @@ class SREXmodel(nn.Module):
             start_idx2 = i2[:, None]
             diff2 = (cumsum2[end_idx2, :] - cumsum2[start_idx2])
             embeddings_others = diff2.view(-1, embedding_dim)
-            # embeddings_others = embeddings_others / num_move2.unsqueeze(-1).to(device)
+            num_move2_batch = num_move2.repeat(num_routes)
+            num_move2_batch[num_move2_batch==0] = 1
+            embeddings_others = embeddings_others / num_move2_batch.unsqueeze(-1).to(device)
 
             return torch.cat((embeddings_moved, embeddings_others), dim=1), num_move_batch
 
