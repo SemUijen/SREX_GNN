@@ -1,18 +1,21 @@
 import torch
 import torch.nn as nn
-from torch.optim.lr_scheduler import MultiStepLR
+from torch.optim.lr_scheduler import MultiStepLR, StepLR
 from torch.nn.functional import softmax, sigmoid
 from utils.metrics import Metrics
 from utils.LabelScalers import SigmoidVectorizedScaler
 from tqdm import tqdm
 from data.utils.get_full_graph import get_full_graph
+from Result import Result
 
 
-def train_model(model, device, trainloader, optimizer, loss_func, processed_dir, parameters):
+def train_model(model, device, trainloader, optimizer, loss_func, processed_dir, parameters, epoch):
     scaler = SigmoidVectorizedScaler(20, device)
     weights = Weights(parameters['weight'])
     metrics = Metrics("Train")
+    results = Result(epoch)
     print(f'Training on {len(trainloader)} batches.....')
+    scheduler = MultiStepLR(optimizer, milestones=[20,40], gamma=0.5)
     model.train()
     total_train_loss = 0
     number_of_rows = 0
