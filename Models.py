@@ -4,7 +4,7 @@ from torch_geometric.nn import GATConv
 from torch_geometric.data import Data
 from torch.nn.functional import pad, softmax
 from torch import Tensor
-from torch_geometric.nn.norm import BatchNorm
+from torch_geometric.nn.norm import BatchNorm, LayerNorm
 
 class SREXmodel(nn.Module):
 
@@ -31,7 +31,7 @@ class SREXmodel(nn.Module):
         # TODO: add gat model for FULL Graph
 
         self.PtoPNorm = BatchNorm(4 * self.num_heads * self.hidden_dim)
-
+        self.nodeNorm = LayerNorm(self.num_heads * self.hidden_dim)
         # TODO: Add extra layers
         self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim))
         self.fc2 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 4))
@@ -129,11 +129,14 @@ class SREXmodel(nn.Module):
         P1_embedding = self.GAT_SolutionGraph(x=P1_nodefeatures.float(), edge_index=P1_edge_index,
                                               edge_attr=P1_edgeFeatures)
         P1_embedding = self.relu(P1_embedding)
+        P1_embedding = self.nodeNorm(P1_embedding, parent1_data.batch)
         # Node(Customer) Embedding Parent2 (Current setup is without whole graph)
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
         P2_embedding = self.relu(P2_embedding)
+        P2_embedding = self.nodeNorm(P2_embedding, parent2_data.batch)
 
         full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
+        full_embedding = self.nodeNorm(full_embedding, full_graph.batch)
 
         for fg_idx in range(len(full_graph)):
             repeat = int(
