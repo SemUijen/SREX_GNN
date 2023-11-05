@@ -28,9 +28,8 @@ class SREXmodel(nn.Module):
 
         self.PtoPNorm = BatchNorm(4 * self.num_heads * self.hidden_dim)
         # TODO: Add extra layers
-        self.fc1 = nn.Linear(4 * self.num_heads * self.hidden_dim, self.num_heads * self.hidden_dim)
-        self.fc2 = nn.Linear(self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim / 2))
-        self.fc3 = nn.Linear(int(self.num_heads * self.hidden_dim / 2), int(self.num_heads * self.hidden_dim / 4))
+        self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim))
+        self.fc2 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 4))
         self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 4), 1)
 
         self.sigmoid = nn.Sigmoid()
