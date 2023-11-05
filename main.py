@@ -97,15 +97,15 @@ if __name__ == "__main__":
     # todo use larger learning rates =>0.00006?
 
     # Training Parameters
-    parameters = {"learning_rate": 0.005,
+    parameters = {"learning_rate": 0.01,
                   "pos_weight": 6,
-                  "epochs": 30,
+                  "epochs": 60,
                   "binary_label": True,
                   "run": 2,
-                  "hidden_dim": 16,
-                  "num_heads": 24,
+                  "hidden_dim": 10,
+                  "num_heads": 8,
                   "fullgraph": True,
-                  "weight": 'confuse',
+                  "weight": "confuse",
                   }
 
     #[(1, 2), (1, 3), (1, 4), (2, 1), (2, 3), (2, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2), (4, 3)]
