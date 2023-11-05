@@ -56,7 +56,7 @@ def main(parameters):
     select_acc = 0
     select_high = 0
     for epoch in range(nr_epochs):
-        tot_train_loss, avg_train_loss, train_metric = train_model(model, device,
+        tot_train_loss, avg_train_loss, train_metric, result = train_model(model, device,
                                                                    train_loader, optimizer,
                                                                    loss_func,
                                                                    trainset.processed_dir,
