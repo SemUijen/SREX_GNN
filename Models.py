@@ -146,6 +146,9 @@ class SREXmodel(nn.Module):
                                                                full_embedding[full_graph.batch == fg_idx].repeat(repeat,
                                                                                                                  1))
 
+        P1_embedding = self.GAT_both(x=P1_embedding, edge_index=P1_edge_index, edge_attr=P1_edgeFeatures)
+        P2_embedding = self.GAT_both(x=P2_embedding, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
+
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
                                                                                          P1_embedding, P2_embedding)
@@ -153,7 +156,7 @@ class SREXmodel(nn.Module):
         # TODO: after the PtoP embeddings the linear layers look at each combination seperatly but technically they are not seperate
         # TODO Add extra linear layers
         # linear layers
-        PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
+        #PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
         out = self.fc1(PtoP_embeddings)
         out = self.relu(out)
         out = self.dropout(out)
