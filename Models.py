@@ -19,7 +19,11 @@ class SREXmodel(nn.Module):
         # the NN learning the representation of Parent solutions with Node = Customer
         self.GAT_SolutionGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
                                          heads=self.num_heads, dropout=dropout)
+
         self.GAT_FullGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
+                                     heads=self.num_heads, dropout=dropout)
+
+        self.GAT_both = GATConv(in_channels=self.hidden_dim*self.num_heads, out_channels=2*self.hidden_dim,
                                      heads=self.num_heads, dropout=dropout)
 
         self.relu = nn.LeakyReLU()
@@ -27,6 +31,7 @@ class SREXmodel(nn.Module):
         # TODO: add gat model for FULL Graph
 
         self.PtoPNorm = BatchNorm(4 * self.num_heads * self.hidden_dim)
+
         # TODO: Add extra layers
         self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim))
         self.fc2 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 4))
