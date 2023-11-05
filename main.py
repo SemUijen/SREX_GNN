@@ -108,7 +108,36 @@ if __name__ == "__main__":
                   "weight": 'confuse',
                   }
 
-    main(parameters)
+    #[(1, 2), (1, 3), (1, 4), (2, 1), (2, 3), (2, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2), (4, 3)]
+
+    result = main(parameters)
+    print(result.epoch)
+
+    result.plot(0)
+    result.plot(2)
+    result.plot(4)
+    result.plot(6)
+
+    # result.plot(14)
+    # result.plot(16)
+    # result.plot(16)
+
+
+    # result.plot(12)
+    # result.plot(14)
+    # result.plot(16)
+    # result.plot(18)
+    # result.plot(20)
+    # time.sleep(20)
+    # result.plot(22)
+    # result.plot(24)
+    # result.plot(26)
+    # result.plot(28)
+    # result.plot(30)
+    # result.plot(32)
+    # result.plot(34)
+
+
 
 
 
