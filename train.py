@@ -31,11 +31,12 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
             else:
                 output, batch = model(p1_data, p2_data)
             optimizer.zero_grad()
-            loss = 0
-
+            loss = torch.tensor(0.0)
+            temp_lab = torch.tensor([])
+            temp_weight = torch.tensor([])
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                loss_func.weight = weights(label, output[batch == i], acc[i], device)
+                temp_weight = torch.cat((temp_weight, weights(label, output[batch == i], acc[i], device)))
 
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
@@ -43,17 +44,29 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
                     label = scaler(label)
                     label = torch.sigmoid(label)
 
-                loss1 = loss_func(output[batch == i], label)
-                loss += loss1
+                p1, p2 = p1_data.num_routes[i], p2_data.num_routes[i]
+                shape = (min(p1, p2), p1, p2)
+                results.add(label, output[batch == i], shape, instance_idx[i])
+
+                #loss1 = loss_func(output[batch == i], label)
+                #loss += loss1
                 metrics(output[batch == i], label)
                 number_of_rows += 1
+                temp_lab = torch.cat((temp_lab, label))
+                if i == 11:
+                    break
+
+            print(output[:temp_lab.shape[0]].shape, temp_lab.shape, temp_weight.shape)
+            loss_func.weight = temp_weight
+            loss = loss_func(output[:temp_lab.shape[0]], temp_lab)
 
             total_train_loss += loss
             loss.backward()
             optimizer.step()
             pbar.update()
 
-    return total_train_loss, (total_train_loss / number_of_rows), metrics
+    scheduler.step()
+    return total_train_loss, (total_train_loss / number_of_rows), metrics, results
 
 
 def test_model(model, device, testloader, loss_func, processed_dir, parameters):
@@ -61,7 +74,7 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
     weights = Weights(parameters['weight'])
     metrics = Metrics("test")
     model.eval()
-    loss = 0
+    loss = torch.tensor(0.0)
     number_of_rows = 0
     with torch.no_grad():
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(testloader):
@@ -134,7 +147,7 @@ class Weights:
         if len(pos_pred) == 0:
             pos_acc = 1
         else:
-            weight[torch.where(pos_pred == False)[0]] = 1.5
+            weight[torch.where(pos_pred == False)[0]] = 1.2
 
         weight[torch.where(label > 0)] = 2
         return weight
