@@ -89,6 +89,8 @@ class SREXmodel(nn.Module):
             p1_sum_of_routes, p1_Route_batch = transform_to_nrRoutes(p1_route_embedding, max_to_move)
             p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
+            p1_sum_of_routes = self.PtoPNorm(p1_sum_of_routes)
+            p2_sum_of_routes = self.PtoPNorm(p2_sum_of_routes)
             full_matrix = torch.tensor([], device=device)
             for NrRoutes_move in range(1, max_to_move + 1):
                 a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
