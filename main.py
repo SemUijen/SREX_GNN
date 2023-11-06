@@ -75,49 +75,37 @@ def main(parameters):
             f"{train_metric} \n"
             f"{test_metric}")
 
-        if train_metric.f1 > f1_best or train_metric.select_acc > select_acc or train_metric.select_high > select_high:
 
-            obj_dict = {"model_state": model.state_dict(),
-                        "Metrics_train": train_metric,
-                        "Metrics_test": test_metric,
-                        }
-            torch.save(obj_dict,
-                       f'{trainset.root}/model_states/SrexGNN_{parameters["run"]}_{epoch}_{"{:.2f}".format(train_metric.f1)}_{"{:.2f}".format(train_metric.select_acc)}')
+        obj_dict = {"model_state": model.state_dict(),
+                    "Metrics_train": train_metric,
+                    "Metrics_test": test_metric,
+                    "Results": result,
+                    }
+        torch.save(obj_dict,
+                   f'{trainset.root}/model_states/SrexGNN_{parameters["run"]}_{epoch}_{"{:.2f}".format(train_metric.f1)}_{"{:.2f}".format(train_metric.select_acc)}_{"{:.2f}".format(train_metric.select_high)}')
 
-            if train_metric.f1 > f1_best:
-                f1_best = train_metric.f1
-            if train_metric.select_acc > select_acc:
-                select_acc = train_metric.select_acc
-            if train_metric.select_high > select_high:
-                select_high = train_metric.select_high
 
-    return result
 
 if __name__ == "__main__":
     # TODO Add potential accuracy if acc > 0: 1 else 0 divide by total number
     # todo use larger learning rates =>0.00006?
 
     # Training Parameters
-    parameters = {"learning_rate": 0.01,
+    parameters = {"learning_rate": 0.0001,
                   "pos_weight": 6,
-                  "epochs": 60,
+                  "epochs": 80,
                   "binary_label": True,
-                  "run": 2,
+                  "run": 1,
                   "hidden_dim": 10,
                   "num_heads": 8,
                   "fullgraph": True,
                   "weight": "confuse",
                   }
 
-    #[(1, 2), (1, 3), (1, 4), (2, 1), (2, 3), (2, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2), (4, 3)]
+    #main(parameters)
 
-    result = main(parameters)
-    print(result.epoch)
 
-    result.plot(0)
-    result.plot(2)
-    result.plot(4)
-    result.plot(6)
+
 
     # result.plot(14)
     # result.plot(16)
