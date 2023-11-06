@@ -20,8 +20,8 @@ def main(parameters):
     instances = instances_VRP + instances_TW
 
     # Train_test split 772 cvrp files, 386 tw files FILE 88 331 are corrupted
-    training = list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
-    test = list(range(618, 772))
+    training = [1] #list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
+    test = [0] #list(range(618, 772))
     train_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in training]
     # train_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308)])
 
@@ -30,9 +30,10 @@ def main(parameters):
     # test_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308, 386)])
 
     trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names,
-                                   instances=instances, is_processed=True)
+                                   instances=instances, is_processed=False)
     testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names,
-                                  instances=instances, is_processed=True)
+                                  instances=instances, is_processed=False)
+
 
     sampler = GroupSampler(data_length=len(trainset), group_size=36, batch_size=1)
     train_loader = MyDataLoader(dataset=trainset, batch_sampler=sampler, num_workers=0,
@@ -60,7 +61,8 @@ def main(parameters):
                                                                    train_loader, optimizer,
                                                                    loss_func,
                                                                    trainset.processed_dir,
-                                                                   parameters)
+                                                                   parameters,
+                                                                           epoch)
 
         tot_test_loss, avg_test_loss, test_metric = test_model(model,
                                                                device,
@@ -102,7 +104,7 @@ if __name__ == "__main__":
                   "weight": "confuse",
                   }
 
-    #main(parameters)
+    main(parameters)
 
 
 
