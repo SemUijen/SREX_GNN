@@ -15,7 +15,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
     metrics = Metrics("Train")
     results = Result(epoch)
     print(f'Training on {len(trainloader)} batches.....')
-    scheduler = MultiStepLR(optimizer, milestones=[20,40], gamma=0.5)
+
     model.train()
     total_train_loss = 0
     number_of_rows = 0
@@ -46,15 +46,16 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
 
                 p1, p2 = p1_data.num_routes[i], p2_data.num_routes[i]
                 shape = (min(p1, p2), p1, p2)
-                results.add(label, output[batch == i], shape, instance_idx[i])
+
+                if i % 12 == 0:
+                    results.add(label, output[batch == i], shape, instance_idx[i])
 
                 #loss1 = loss_func(output[batch == i], label)
                 #loss += loss1
                 metrics(output[batch == i], label)
                 number_of_rows += 1
                 temp_lab = torch.cat((temp_lab, label))
-                if i == 11:
-                    break
+
 
             loss_func.weight = temp_weight
             loss = loss_func(output[:temp_lab.shape[0]], temp_lab)
@@ -64,7 +65,6 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
             optimizer.step()
             pbar.update()
 
-    scheduler.step()
     return total_train_loss, (total_train_loss / number_of_rows), metrics, results
 
 
