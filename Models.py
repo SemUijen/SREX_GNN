@@ -31,7 +31,6 @@ class SREXmodel(nn.Module):
         # TODO: add gat model for FULL Graph
 
         self.PtoPNorm = BatchNorm(4 * self.num_heads * self.hidden_dim)
-        self.nodeNorm = LayerNorm(self.num_heads * self.hidden_dim)
         # TODO: Add extra layers
         self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim))
         self.fc2 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 4))
@@ -99,8 +98,6 @@ class SREXmodel(nn.Module):
             p1_sum_of_routes, p1_Route_batch = transform_to_nrRoutes(p1_route_embedding, max_to_move)
             p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
-            p1_sum_of_routes = self.PtoPNorm(p1_sum_of_routes)
-            p2_sum_of_routes = self.PtoPNorm(p2_sum_of_routes)
             full_matrix = torch.tensor([], device=device)
             for NrRoutes_move in range(1, max_to_move + 1):
                 a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
@@ -124,7 +121,8 @@ class SREXmodel(nn.Module):
         # get graph input for full graph
         nodefeatures, edge_index, edgeFeatures = full_graph.x, full_graph.edge_index, full_graph.edge_attr
 
-        # TODO: both embedding have no activation function yet: embedding = self.relu(embedding)?
+
+        # TODO: Add normalization when features are inputted?
         # Node(Customer) Embedding Parent1 (Current setup is without whole graph)
         P1_embedding = self.GAT_SolutionGraph(x=P1_nodefeatures.float(), edge_index=P1_edge_index,
                                               edge_attr=P1_edgeFeatures)
@@ -132,11 +130,10 @@ class SREXmodel(nn.Module):
         P1_embedding = self.nodeNorm(P1_embedding, parent1_data.batch)
         # Node(Customer) Embedding Parent2 (Current setup is without whole graph)
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
-        P2_embedding = self.relu(P2_embedding)
         P2_embedding = self.nodeNorm(P2_embedding, parent2_data.batch)
 
         full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
-        full_embedding = self.nodeNorm(full_embedding, full_graph.batch)
+
 
         for fg_idx in range(len(full_graph)):
             repeat = int(
@@ -159,7 +156,7 @@ class SREXmodel(nn.Module):
         # TODO: after the PtoP embeddings the linear layers look at each combination seperatly but technically they are not seperate
         # TODO Add extra linear layers
         # linear layers
-        #PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
+        PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
         out = self.fc1(PtoP_embeddings)
         out = self.relu(out)
         out = self.dropout(out)
