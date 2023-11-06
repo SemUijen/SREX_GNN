@@ -32,8 +32,8 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
                 output, batch = model(p1_data, p2_data)
             optimizer.zero_grad()
             loss = torch.tensor(0.0)
-            temp_lab = torch.tensor([])
-            temp_weight = torch.tensor([])
+            temp_lab = torch.tensor([], device=device)
+            temp_weight = torch.tensor([], device=device)
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
                 temp_weight = torch.cat((temp_weight, weights(label, output[batch == i], acc[i], device)))
