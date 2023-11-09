@@ -24,7 +24,7 @@ class GroupSampler(Sampler):
     def __iter__(self) -> Iterator[List[int]]:
         sizes = torch.tensor(range(1, self.data_length + 1))
         groups = list(torch.chunk(torch.argsort(sizes), self.group_batches()))
-        self.randomizer.shuffle(groups)
+        #self.randomizer.shuffle(groups)
 
         l = len(groups)
         n = self.batch_size
