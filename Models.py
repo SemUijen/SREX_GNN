@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch_geometric.nn import GATConv
+from torch_geometric.nn import GATConv, GATv2Conv
 from torch_geometric.data import Data
 from torch.nn.functional import pad, softmax
 from torch import Tensor
@@ -17,28 +17,35 @@ class SREXmodel(nn.Module):
         self.num_heads = num_heads
 
         # the NN learning the representation of Parent solutions with Node = Customer
-        self.GAT_SolutionGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
-                                         heads=self.num_heads, dropout=dropout)
+        self.GAT_SolutionGraph = GATv2Conv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
+                                         heads=self.num_heads, dropout=0, edge_dim=1)
 
-        self.GAT_FullGraph = GATConv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
-                                     heads=self.num_heads, dropout=dropout)
+        self.GAT_FullGraph = GATv2Conv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
+                                     heads=self.num_heads, dropout=0, edge_dim=1)
 
-        self.GAT_both = GATConv(in_channels=self.hidden_dim*self.num_heads, out_channels=2*self.hidden_dim,
-                                     heads=self.num_heads, dropout=dropout)
+        self.GAT_both = GATv2Conv(in_channels=2*self.hidden_dim*self.num_heads, out_channels=2*self.hidden_dim,
+                                     heads=self.num_heads, dropout=0, edge_dim=1)
 
         self.relu = nn.LeakyReLU()
         self.dropout = nn.Dropout(dropout)
         # TODO: add gat model for FULL Graph
 
-        self.PtoPNorm = BatchNorm(4 * self.num_heads * self.hidden_dim)
+        self.PtoPNorm = BatchNorm(8 * self.num_heads * self.hidden_dim)
+        self.BothNorm = BatchNorm(2 * self.num_heads * self.hidden_dim)
+
         # TODO: Add extra layers
-        self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim))
-        self.fc2 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 4))
-        self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 4), 1)
+        self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim)*4)
+        self.fc2 = nn.Linear(4*int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim)*2)
+        self.fc3 = nn.Linear(int(self.num_heads * self.hidden_dim)*2, int(self.num_heads * self.hidden_dim))
+        self.fc4 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 2))
+        self.fc5 = nn.Linear(int(self.num_heads * self.hidden_dim/2), int(self.num_heads * self.hidden_dim/4))
+        self.fc6 = nn.Linear(int(self.num_heads * self.hidden_dim/4), int(self.num_heads * self.hidden_dim/8))
+
+        self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 8), 1)
 
         self.sigmoid = nn.Sigmoid()
 
-    def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings):
+    def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings, epoch):
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
 
         def transform_to_route(graph_data, embeddings, batch_indices, batch_idx):
@@ -58,7 +65,7 @@ class SREXmodel(nn.Module):
             num_routes = route_embeddings.shape[0]
 
             route_embeddings2 = torch.cat((route_embeddings, route_embeddings), 0)
-            cumsum2 = torch.cat((torch.zeros(1, embedding_dim, device=device), torch.cumsum(route_embeddings2, 0)), 0)
+            cumsum2 = torch.cat((torch.ones(1, embedding_dim, device=device), torch.cumsum(route_embeddings2, 0)), 0)
 
             #routes that are moved
             i1 = torch.arange(num_routes)
@@ -76,6 +83,7 @@ class SREXmodel(nn.Module):
             end_idx2 = i2[:, None] + num_move2[None, :]
             start_idx2 = i2[:, None]
             diff2 = (cumsum2[end_idx2, :] - cumsum2[start_idx2])
+
             embeddings_others = diff2.view(-1, embedding_dim)
             num_move2_batch = num_move2.repeat(num_routes)
             num_move2_batch[num_move2_batch==0] = 1
@@ -98,20 +106,22 @@ class SREXmodel(nn.Module):
             p1_sum_of_routes, p1_Route_batch = transform_to_nrRoutes(p1_route_embedding, max_to_move)
             p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
+
             full_matrix = torch.tensor([], device=device)
+
             for NrRoutes_move in range(1, max_to_move + 1):
                 a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
                                                p2_sum_of_routes[p2_Route_batch == NrRoutes_move][None, :])
                 test = torch.cat((a, b), -1)
                 full_matrix = torch.cat((full_matrix, test.flatten(0, 1)))
 
-            PtoP_embeddings = torch.cat((PtoP_embeddings, full_matrix))
 
+            PtoP_embeddings = torch.cat((PtoP_embeddings, full_matrix))
             PtoP_batch = torch.cat((PtoP_batch, torch.tensor([batch_idx] * full_matrix.size(0), device=device)))
 
         return PtoP_embeddings, PtoP_batch
 
-    def forward(self, parent1_data: Data, parent2_data: Data, full_graph: Data, instance_batch):
+    def forward(self, parent1_data: Data, parent2_data: Data, full_graph: Data, instance_batch, epoch):
 
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
         # get graph input for solution1
@@ -121,46 +131,63 @@ class SREXmodel(nn.Module):
         # get graph input for full graph
         nodefeatures, edge_index, edgeFeatures = full_graph.x, full_graph.edge_index, full_graph.edge_attr
 
-
-        # TODO: Add normalization when features are inputted?
+        # TODO: both embedding have no activation function yet: embedding = self.relu(embedding)?
         # Node(Customer) Embedding Parent1 (Current setup is without whole graph)
         P1_embedding = self.GAT_SolutionGraph(x=P1_nodefeatures.float(), edge_index=P1_edge_index,
                                               edge_attr=P1_edgeFeatures)
         P1_embedding = self.relu(P1_embedding)
-        P1_embedding = self.nodeNorm(P1_embedding, parent1_data.batch)
         # Node(Customer) Embedding Parent2 (Current setup is without whole graph)
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
-        P2_embedding = self.nodeNorm(P2_embedding, parent2_data.batch)
+        P2_embedding = self.relu(P2_embedding)
 
         full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
 
 
+        P1f_embedding = torch.tensor([], device=device)
+        P2f_embedding = torch.tensor([], device=device)
         for fg_idx in range(len(full_graph)):
             repeat = int(
                 len(instance_batch[instance_batch == fg_idx]) / len(full_embedding[full_graph.batch == fg_idx]))
-            P1_embedding[instance_batch == fg_idx] = torch.add(P1_embedding[instance_batch == fg_idx],
-                                                               full_embedding[full_graph.batch == fg_idx].repeat(repeat,
-                                                                                                                 1))
+            temp = torch.cat((P1_embedding[instance_batch == fg_idx], full_embedding[full_graph.batch == fg_idx].repeat(repeat, 1)), dim=1)
+            P1f_embedding = torch.cat((P1f_embedding, temp))
 
-            P2_embedding[instance_batch == fg_idx] = torch.add(P2_embedding[instance_batch == fg_idx],
-                                                               full_embedding[full_graph.batch == fg_idx].repeat(repeat,
-                                                                                                                 1))
+            temp = torch.cat((P2_embedding[instance_batch == fg_idx], full_embedding[full_graph.batch == fg_idx].repeat(repeat, 1)), dim=1)
+            P2f_embedding = torch.cat((P2f_embedding, temp))
 
-        P1_embedding = self.GAT_both(x=P1_embedding, edge_index=P1_edge_index, edge_attr=P1_edgeFeatures)
-        P2_embedding = self.GAT_both(x=P2_embedding, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
+        P1f_embedding = self.BothNorm(P1f_embedding)
+        P2f_embedding = self.BothNorm(P2f_embedding)
+
+        P1f_embedding = self.GAT_both(x=P1f_embedding, edge_index=P1_edge_index, edge_attr=P1_edgeFeatures)
+        P1f_embedding = self.relu(P1f_embedding)
+        P2f_embedding = self.GAT_both(x=P2f_embedding, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
+        P2f_embedding = self.relu(P2f_embedding)
 
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
-                                                                                         P1_embedding, P2_embedding)
+                                                                                         P1f_embedding, P2f_embedding, epoch)
+
 
         # TODO: after the PtoP embeddings the linear layers look at each combination seperatly but technically they are not seperate
         # TODO Add extra linear layers
         # linear layers
+
         PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
         out = self.fc1(PtoP_embeddings)
         out = self.relu(out)
         out = self.dropout(out)
         out = self.fc2(out)
+        out = self.relu(out)
+        out = self.dropout(out)
+        out = self.fc3(out)
+        out = self.relu(out)
+        out = self.dropout(out)
+        out = self.fc4(out)
+        out = self.relu(out)
+        out = self.dropout(out)
+        out = self.fc5(out)
+        out = self.relu(out)
+        out = self.dropout(out)
+        out = self.fc6(out)
         out = self.relu(out)
         out = self.dropout(out)
         out = self.head(out)
