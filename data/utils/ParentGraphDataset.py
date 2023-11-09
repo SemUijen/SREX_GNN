@@ -5,6 +5,7 @@ import numpy as np
 
 import torch
 from torch_geometric.data import Dataset
+from torch_geometric.transforms import AddLaplacianEigenvectorPE, AddRandomWalkPE
 from data.utils.GraphData import FullGraph, ParentGraph
 from data.utils import SolutionTransformer
 

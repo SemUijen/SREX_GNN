@@ -40,7 +40,6 @@ class SREXmodel(nn.Module):
         self.fc4 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 2))
         self.fc5 = nn.Linear(int(self.num_heads * self.hidden_dim/2), int(self.num_heads * self.hidden_dim/4))
         self.fc6 = nn.Linear(int(self.num_heads * self.hidden_dim/4), int(self.num_heads * self.hidden_dim/8))
-
         self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 8), 1)
 
         self.sigmoid = nn.Sigmoid()
@@ -166,10 +165,6 @@ class SREXmodel(nn.Module):
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
                                                                                          P1f_embedding, P2f_embedding, epoch)
 
-
-        # TODO: after the PtoP embeddings the linear layers look at each combination seperatly but technically they are not seperate
-        # TODO Add extra linear layers
-        # linear layers
 
         PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
         out = self.fc1(PtoP_embeddings)

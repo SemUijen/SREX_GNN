@@ -137,5 +137,5 @@ class Weights:
         else:
             weight[torch.where(pos_pred == False)[0]] = 1
 
-        weight[torch.where(label > 0)] = 1.5
+        weight[torch.where(label > 0)] = 2
         return weight
