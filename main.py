@@ -48,14 +48,12 @@ def main(parameters):
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=parameters["learning_rate"])
 
-    loss_func = nn.BCELoss(reduction='mean')
+    loss_func = nn.BCELoss(reduction='sum')
 
     nr_epochs = parameters["epochs"]
     print('train_acc: ', trainset.get_accuracy_scores())
     print('test_acc: ', testset.get_accuracy_scores())
-    f1_best = 0
-    select_acc = 0
-    select_high = 0
+
     for epoch in range(nr_epochs):
         tot_train_loss, avg_train_loss, train_metric, result = train_model(model, device,
                                                                    train_loader, optimizer,
@@ -93,46 +91,18 @@ if __name__ == "__main__":
     # todo use larger learning rates =>0.00006?
 
     # Training Parameters
-    parameters = {"learning_rate": 0.0001,
+    parameters = {"learning_rate": 0.005,
                   "pos_weight": 6,
-                  "epochs": 80,
+                  "epochs": 90,
                   "binary_label": True,
                   "run": 1,
-                  "hidden_dim": 10,
-                  "num_heads": 8,
-                  "fullgraph": True,
+                  "hidden_dim": 16,
+                  "num_heads": 16,
                   "weight": "confuse",
                   }
 
-    main(parameters)
+    result = main(parameters)
 
-
-
-
-    # result.plot(14)
-    # result.plot(16)
-    # result.plot(16)
-
-
-    # result.plot(12)
-    # result.plot(14)
-    # result.plot(16)
-    # result.plot(18)
-    # result.plot(20)
-    # time.sleep(20)
-    # result.plot(22)
-    # result.plot(24)
-    # result.plot(26)
-    # result.plot(28)
-    # result.plot(30)
-    # result.plot(32)
-    # result.plot(34)
-
-
-
-
-
-
-
-
-
+    result.plot(0)
+    result.plot(2)
+    result.plot(6)
