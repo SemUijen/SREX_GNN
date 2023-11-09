@@ -85,6 +85,8 @@ def main(parameters):
                    f'{trainset.root}/model_states/SrexGNN_{parameters["run"]}_{epoch}_{"{:.2f}".format(train_metric.f1)}_{"{:.2f}".format(train_metric.select_acc)}_{"{:.2f}".format(train_metric.select_high)}')
 
 
+    return result
+
 
 if __name__ == "__main__":
     # TODO Add potential accuracy if acc > 0: 1 else 0 divide by total number
