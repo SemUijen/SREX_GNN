@@ -7,7 +7,7 @@ from utils.LabelScalers import SigmoidVectorizedScaler
 from tqdm import tqdm
 from data.utils.get_full_graph import get_full_graph
 from Result import Result
-
+import os.path as osp
 
 def train_model(model, device, trainloader, optimizer, loss_func, processed_dir, parameters, epoch):
     scaler = SigmoidVectorizedScaler(20, device)
@@ -15,7 +15,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
     metrics = Metrics("Train")
     results = Result(epoch)
     print(f'Training on {len(trainloader)} batches.....')
-
+    scheduler = MultiStepLR(optimizer, milestones=[20, 40], gamma=0.5)
     model.train()
     total_train_loss = 0
     number_of_rows = 0
@@ -24,20 +24,17 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(trainloader):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
-            if parameters["fullgraph"]:
-                full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
-                full_graph = full_graph.to(device)
-                output, batch = model(p1_data, p2_data, full_graph, instance_indices)
-            else:
-                output, batch = model(p1_data, p2_data)
+
+            full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
+            full_graph = full_graph.to(device)
+            output, batch = model(p1_data, p2_data, full_graph, instance_indices, epoch)
+
             optimizer.zero_grad()
             loss = torch.tensor(0.0)
-            temp_lab = torch.tensor([], device=device)
-            temp_weight = torch.tensor([], device=device)
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                temp_weight = torch.cat((temp_weight, weights(label, output[batch == i], acc[i], device)))
-
+                #temp_weight = torch.cat((temp_weight, weights(label, output[batch == i], acc[i], device)))
+                loss_func.weight = weights(label, output[batch == i], acc[i], device)
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
                 else:
@@ -46,29 +43,24 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
 
                 p1, p2 = p1_data.num_routes[i], p2_data.num_routes[i]
                 shape = (min(p1, p2), p1, p2)
+                results.add(label, output[batch == i], shape, instance_idx[i])
 
-                if i % 12 == 0:
-                    results.add(label, output[batch == i], shape, instance_idx[i])
-
-                #loss1 = loss_func(output[batch == i], label)
-                #loss += loss1
+                loss1 = loss_func(output[batch == i], label)
+                loss += loss1
                 metrics(output[batch == i], label)
                 number_of_rows += 1
-                temp_lab = torch.cat((temp_lab, label))
 
-
-            loss_func.weight = temp_weight
-            loss = loss_func(output[:temp_lab.shape[0]], temp_lab)
-
-            total_train_loss += loss
+            total_train_loss += loss.detach()
             loss.backward()
             optimizer.step()
             pbar.update()
+            break
 
+    scheduler.step()
     return total_train_loss, (total_train_loss / number_of_rows), metrics, results
 
 
-def test_model(model, device, testloader, loss_func, processed_dir, parameters):
+def test_model(model, device, testloader, loss_func, processed_dir, parameters, epoch):
     scaler = SigmoidVectorizedScaler(20, device)
     weights = Weights(parameters['weight'])
     metrics = Metrics("test")
@@ -80,12 +72,9 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters):
             p1_data = p1_data.to(device)
             p2_data = p2_data.to(device)
 
-            if parameters["fullgraph"]:
-                full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
-                full_graph = full_graph.to(device)
-                output, batch = model(p1_data, p2_data, full_graph, instance_indices)
-            else:
-                output, batch = model(p1_data, p2_data)
+            full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
+            full_graph = full_graph.to(device)
+            output, batch = model(p1_data, p2_data, full_graph, instance_indices, epoch)
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
@@ -146,7 +135,7 @@ class Weights:
         if len(pos_pred) == 0:
             pos_acc = 1
         else:
-            weight[torch.where(pos_pred == False)[0]] = 1.2
+            weight[torch.where(pos_pred == False)[0]] = 1
 
-        weight[torch.where(label > 0)] = 2
+        weight[torch.where(label > 0)] = 1.5
         return weight
