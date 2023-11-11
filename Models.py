@@ -140,6 +140,7 @@ class SREXmodel(nn.Module):
         P2_embedding = self.relu(P2_embedding)
 
         full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
+        full_embedding = self.relu(full_embedding)
 
 
         P1f_embedding = torch.tensor([], device=device)
