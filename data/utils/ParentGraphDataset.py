@@ -1,18 +1,15 @@
 import os.path as osp
 import pickle
 from typing import Union, List, Tuple
-import numpy as np
 
 import torch
 from torch_geometric.data import Dataset
-from torch_geometric.transforms import AddLaplacianEigenvectorPE, AddRandomWalkPE, Distance, Compose
+from torch_geometric.transforms import AddLaplacianEigenvectorPE
 from data.utils.GraphData import FullGraph, ParentGraph
 from data.utils import SolutionTransformer
-from torch_geometric.transforms import NormalizeFeatures
-PE = AddLaplacianEigenvectorPE(2, attr_name=None, is_undirected=True)
-norma = NormalizeFeatures()
-dis_norm = Distance()
-transform = Compose([norma])
+from data.utils.Normalize import normalize_graphs
+PE = AddLaplacianEigenvectorPE(4, attr_name=None, is_undirected=True)
+
 class MyLabel:
     def __init__(self, label):
         self.label = label
@@ -54,16 +51,16 @@ class ParentGraphsDataset(Dataset):
         # First get FullGraphs
         idx = 0
         for instance in self.instances:
-            edge_index, edge_weight, client_features = self.pre_transform(instance_name=instance,
+            edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos = self.pre_transform(instance_name=instance,
                                                                           get_full_graph=True)
-            data = FullGraph(edge_index, edge_weight, client_features)
-            data = transform(data)
+            data = FullGraph(edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos)
+            data = normalize_graphs(data)
             #data = PE(data)
-            #print(data)
-
+            max_distance = edge_weight.max().item()
             file_name = f'FullGraph_{idx}.pt'
             torch.save(data, osp.join(self.processed_dir, file_name))
-            self.instance_dict[instance] = idx
+            self.instance_dict[instance] = idx, max_distance
+
             idx += 1
 
         for raw_path in self.raw_paths:
@@ -77,7 +74,7 @@ class ParentGraphsDataset(Dataset):
 
                 if route_instance in self.use_instances:
                     # for getting the correct Full_graph
-                    InstanceIdx = [self.instance_dict[route_instance]] * 12
+                    InstanceIdx = [self.instance_dict[route_instance][0]] * 12
                     self.instance_idx.extend(InstanceIdx)
 
                     # add couple labels
@@ -90,14 +87,14 @@ class ParentGraphsDataset(Dataset):
                         for i in range(len(raw_data["parent_routes"][batch])):
                             solution = raw_data["parent_routes"][batch][i]
                             idx = raw_data["parent_ids"][batch][i]
-
-                            client_route_vector, edge_index, edge_weight, num_routes, client_features = self.pre_transform(
+                            max_dis = self.instance_dict[route_instance][1]
+                            client_route_vector, edge_index, edge_weight, num_routes, client_features , client_demand, client_pos, depot_pos  = self.pre_transform(
                                 instance_name=route_instance, get_full_graph=False,
                                 parent_solution=solution)
 
                             data = ParentGraph(client_route_vector, edge_index, edge_weight, num_routes,
-                                               client_features)
-                            data = transform(data)
+                                               client_features, client_demand, client_pos, depot_pos)
+                            data = normalize_graphs(data, max_distance=max_dis)
                             file_name = f'ParentGraph_{idx}.pt'
                             self.processed_files.append(file_name)
                             torch.save(data, osp.join(self.processed_dir, file_name))
