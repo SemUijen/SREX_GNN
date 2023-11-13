@@ -9,6 +9,7 @@ from data.utils.get_full_graph import get_full_graph
 from Result import Result
 import os.path as osp
 
+
 def train_model(model, device, trainloader, optimizer, loss_func, processed_dir, parameters, epoch):
     scaler = SigmoidVectorizedScaler(20, device)
     weights = Weights(parameters['weight'])
@@ -27,13 +28,13 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
 
             full_graph, instance_indices = get_full_graph(processed_dir, instance_idx, device)
             full_graph = full_graph.to(device)
+
             output, batch = model(p1_data, p2_data, full_graph, instance_indices, epoch)
 
             optimizer.zero_grad()
             loss = torch.tensor(0.0)
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
-                #temp_weight = torch.cat((temp_weight, weights(label, output[batch == i], acc[i], device)))
                 loss_func.weight = weights(label, output[batch == i], acc[i], device)
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
@@ -54,7 +55,6 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
             loss.backward()
             optimizer.step()
             pbar.update()
-            break
 
     scheduler.step()
     return total_train_loss, (total_train_loss / number_of_rows), metrics, results
@@ -135,7 +135,7 @@ class Weights:
         if len(pos_pred) == 0:
             pos_acc = 1
         else:
-            weight[torch.where(pos_pred == False)[0]] = 1
+            weight[torch.where(pos_pred == False)[0]] = 1.5
 
-        weight[torch.where(label > 0)] = 2
+        weight[torch.where(label > 0)] = 1.5
         return weight
