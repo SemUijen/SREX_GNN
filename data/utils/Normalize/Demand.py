@@ -32,16 +32,18 @@ class Demand(BaseTransform):
     def forward(self, data: Data) -> Data:
         pseudo = data.x
 
-        demand, capacity = data.client_demand[:,0].view(-1, 1), data.client_demand[:,1].max()
+        demand, capacity = data.client_demand[:,0].view(-1, 1), data.client_demand[:,1].view(-1, 1)
 
+        max_cap = capacity.max()
         if self.norm and demand.numel() > 0:
 
             length = self.interval[1] - self.interval[0]
-            demand = length * (demand / capacity) + self.interval[0]
+            demand = length * (demand / max_cap) + self.interval[0]
+            capacity = length * (capacity / max_cap) + self.interval[0]
 
         if pseudo is not None and self.cat:
             pseudo = pseudo.view(-1, 1) if pseudo.dim() == 1 else pseudo
-            data.x = torch.cat([pseudo, demand.type_as(pseudo)], dim=-1)
+            data.x = torch.cat([pseudo, demand.type_as(pseudo), capacity.type_as(pseudo)], dim=-1)
         else:
             data.x = demand
 
