@@ -6,6 +6,7 @@ from torch.nn.functional import pad, softmax
 from torch import Tensor
 from torch_geometric.nn.norm import BatchNorm, LayerNorm
 
+
 class SREXmodel(nn.Module):
 
     def __init__(self, num_node_features: int, hidden_dim: int = 64, num_heads: int = 8,
@@ -18,13 +19,13 @@ class SREXmodel(nn.Module):
 
         # the NN learning the representation of Parent solutions with Node = Customer
         self.GAT_SolutionGraph = GATv2Conv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
-                                         heads=self.num_heads, dropout=0, edge_dim=1)
+                                           heads=self.num_heads, dropout=0, edge_dim=1)
 
         self.GAT_FullGraph = GATv2Conv(in_channels=self.num_node_features, out_channels=self.hidden_dim,
-                                     heads=self.num_heads, dropout=0, edge_dim=1)
+                                       heads=self.num_heads, dropout=0, edge_dim=1)
 
-        self.GAT_both = GATv2Conv(in_channels=2*self.hidden_dim*self.num_heads, out_channels=2*self.hidden_dim,
-                                     heads=self.num_heads, dropout=0, edge_dim=1)
+        self.GAT_both = GATv2Conv(in_channels=2 * self.hidden_dim * self.num_heads, out_channels=2 * self.hidden_dim,
+                                  heads=self.num_heads, dropout=0, edge_dim=1)
 
         self.relu = nn.LeakyReLU()
         self.dropout = nn.Dropout(dropout)
@@ -34,17 +35,18 @@ class SREXmodel(nn.Module):
         self.BothNorm = BatchNorm(2 * self.num_heads * self.hidden_dim)
 
         # TODO: Add extra layers
-        self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim)*4)
-        self.fc2 = nn.Linear(4*int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim)*2)
-        self.fc3 = nn.Linear(int(self.num_heads * self.hidden_dim)*2, int(self.num_heads * self.hidden_dim))
+        self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim) * 4)
+        self.fc2 = nn.Linear(4 * int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim) * 2)
+        self.fc3 = nn.Linear(int(self.num_heads * self.hidden_dim) * 2, int(self.num_heads * self.hidden_dim))
         self.fc4 = nn.Linear(int(self.num_heads * self.hidden_dim), int(self.num_heads * self.hidden_dim / 2))
-        self.fc5 = nn.Linear(int(self.num_heads * self.hidden_dim/2), int(self.num_heads * self.hidden_dim/4))
-        self.fc6 = nn.Linear(int(self.num_heads * self.hidden_dim/4), int(self.num_heads * self.hidden_dim/8))
+        self.fc5 = nn.Linear(int(self.num_heads * self.hidden_dim / 2), int(self.num_heads * self.hidden_dim / 4))
+        self.fc6 = nn.Linear(int(self.num_heads * self.hidden_dim / 4), int(self.num_heads * self.hidden_dim / 8))
         self.head = nn.Linear(int(self.num_heads * self.hidden_dim / 8), 1)
 
         self.sigmoid = nn.Sigmoid()
 
-    def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings, epoch):
+    def transform_clientEmbeddings_to_routeEmbeddings(self, p1_graph_data, p2_graph_data, p1_embeddings, p2_embeddings,
+                                                      epoch):
         device = "cuda" if next(self.parameters()).is_cuda else "cpu"
 
         def transform_to_route(graph_data, embeddings, batch_indices, batch_idx):
@@ -66,7 +68,7 @@ class SREXmodel(nn.Module):
             route_embeddings2 = torch.cat((route_embeddings, route_embeddings), 0)
             cumsum2 = torch.cat((torch.ones(1, embedding_dim, device=device), torch.cumsum(route_embeddings2, 0)), 0)
 
-            #routes that are moved
+            # routes that are moved
             i1 = torch.arange(num_routes)
             num_move = torch.arange(1, max_move + 1)
             end_idx = i1[:, None] + num_move[None, :]
@@ -74,7 +76,7 @@ class SREXmodel(nn.Module):
             diff = (cumsum2[end_idx, :] - cumsum2[start_idx])
             num_move_batch = num_move.repeat(num_routes)
             embeddings_moved = diff.view(-1, embedding_dim)
-            embeddings_moved = embeddings_moved/num_move_batch.unsqueeze(-1).to(device)
+            embeddings_moved = embeddings_moved / num_move_batch.unsqueeze(-1).to(device)
 
             # Routes that are not moved
             i2 = torch.arange(1, num_routes + 1)
@@ -85,7 +87,7 @@ class SREXmodel(nn.Module):
 
             embeddings_others = diff2.view(-1, embedding_dim)
             num_move2_batch = num_move2.repeat(num_routes)
-            num_move2_batch[num_move2_batch==0] = 1
+            num_move2_batch[num_move2_batch == 0] = 1
             embeddings_others = embeddings_others / num_move2_batch.unsqueeze(-1).to(device)
 
             return torch.cat((embeddings_moved, embeddings_others), dim=1), num_move_batch
@@ -105,7 +107,6 @@ class SREXmodel(nn.Module):
             p1_sum_of_routes, p1_Route_batch = transform_to_nrRoutes(p1_route_embedding, max_to_move)
             p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
-
             full_matrix = torch.tensor([], device=device)
 
             for NrRoutes_move in range(1, max_to_move + 1):
@@ -113,7 +114,6 @@ class SREXmodel(nn.Module):
                                                p2_sum_of_routes[p2_Route_batch == NrRoutes_move][None, :])
                 test = torch.cat((a, b), -1)
                 full_matrix = torch.cat((full_matrix, test.flatten(0, 1)))
-
 
             PtoP_embeddings = torch.cat((PtoP_embeddings, full_matrix))
             PtoP_batch = torch.cat((PtoP_batch, torch.tensor([batch_idx] * full_matrix.size(0), device=device)))
@@ -148,10 +148,14 @@ class SREXmodel(nn.Module):
         for fg_idx in range(len(full_graph)):
             repeat = int(
                 len(instance_batch[instance_batch == fg_idx]) / len(full_embedding[full_graph.batch == fg_idx]))
-            temp = torch.cat((P1_embedding[instance_batch == fg_idx], full_embedding[full_graph.batch == fg_idx].repeat(repeat, 1)), dim=1)
+            temp = torch.cat(
+                (P1_embedding[instance_batch == fg_idx], full_embedding[full_graph.batch == fg_idx].repeat(repeat, 1)),
+                dim=1)
             P1f_embedding = torch.cat((P1f_embedding, temp))
 
-            temp = torch.cat((P2_embedding[instance_batch == fg_idx], full_embedding[full_graph.batch == fg_idx].repeat(repeat, 1)), dim=1)
+            temp = torch.cat(
+                (P2_embedding[instance_batch == fg_idx], full_embedding[full_graph.batch == fg_idx].repeat(repeat, 1)),
+                dim=1)
             P2f_embedding = torch.cat((P2f_embedding, temp))
 
         P1f_embedding = self.BothNorm(P1f_embedding)
@@ -164,8 +168,8 @@ class SREXmodel(nn.Module):
 
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,
-                                                                                         P1f_embedding, P2f_embedding, epoch)
-
+                                                                                         P1f_embedding, P2f_embedding,
+                                                                                         epoch)
 
         PtoP_embeddings = self.PtoPNorm(PtoP_embeddings)
         out = self.fc1(PtoP_embeddings)
@@ -190,4 +194,3 @@ class SREXmodel(nn.Module):
         probs = self.sigmoid(out)
 
         return probs.flatten(), PtoP_batch
-
