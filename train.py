@@ -16,7 +16,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
     metrics = Metrics("Train")
     results = Result(epoch)
     print(f'Training on {len(trainloader)} batches.....')
-    scheduler = MultiStepLR(optimizer, milestones=[20, 40], gamma=0.5)
+    #scheduler = MultiStepLR(optimizer, milestones=[20, 40], gamma=0.5)
     model.train()
     total_train_loss = 0
     number_of_rows = 0
@@ -32,7 +32,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
             output, batch = model(p1_data, p2_data, full_graph, instance_indices, epoch)
 
             optimizer.zero_grad()
-            loss = torch.tensor(0.0)
+            loss = torch.tensor(0.0, device=device)
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
                 loss_func.weight = weights(label, output[batch == i], acc[i], device)
@@ -56,7 +56,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
             optimizer.step()
             pbar.update()
 
-    scheduler.step()
+    #scheduler.step()
     return total_train_loss, (total_train_loss / number_of_rows), metrics, results
 
 
@@ -65,7 +65,7 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters, 
     weights = Weights(parameters['weight'])
     metrics = Metrics("test")
     model.eval()
-    loss = torch.tensor(0.0)
+    torch.tensor(0.0, device=device)
     number_of_rows = 0
     with torch.no_grad():
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(testloader):
