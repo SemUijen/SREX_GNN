@@ -8,7 +8,7 @@ from torch_geometric.transforms import AddLaplacianEigenvectorPE
 from data.utils.GraphData import FullGraph, ParentGraph
 from data.utils import SolutionTransformer
 from data.utils.Normalize import normalize_graphs
-PE = AddLaplacianEigenvectorPE(4, attr_name=None, is_undirected=True)
+PE = AddLaplacianEigenvectorPE(6, attr_name=None, is_undirected=True)
 
 class MyLabel:
     def __init__(self, label):
@@ -55,7 +55,7 @@ class ParentGraphsDataset(Dataset):
                                                                           get_full_graph=True)
             data = FullGraph(edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos)
             data = normalize_graphs(data)
-            #data = PE(data)
+            data = PE(data)
             max_distance = edge_weight.max().item()
             file_name = f'FullGraph_{idx}.pt'
             torch.save(data, osp.join(self.processed_dir, file_name))
@@ -95,6 +95,7 @@ class ParentGraphsDataset(Dataset):
                             data = ParentGraph(client_route_vector, edge_index, edge_weight, num_routes,
                                                client_features, client_demand, client_pos, depot_pos)
                             data = normalize_graphs(data, max_distance=max_dis)
+                            data = PE(data)
                             file_name = f'ParentGraph_{idx}.pt'
                             self.processed_files.append(file_name)
                             torch.save(data, osp.join(self.processed_dir, file_name))
