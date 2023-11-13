@@ -65,7 +65,7 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters, 
     weights = Weights(parameters['weight'])
     metrics = Metrics("test")
     model.eval()
-    torch.tensor(0.0, device=device)
+    loss = torch.tensor(0.0, device=device)
     number_of_rows = 0
     with torch.no_grad():
         for count, (p1_data, p2_data, target, instance_idx, acc) in enumerate(testloader):
@@ -137,5 +137,5 @@ class Weights:
         else:
             weight[torch.where(pos_pred == False)[0]] = 1.5
 
-        weight[torch.where(label > 0)] = 1.5
+        weight[torch.where(label > 0)] = 2
         return weight
