@@ -93,6 +93,39 @@ class SREXmodel(nn.Module):
 
             return torch.cat((embeddings_moved, embeddings_others), dim=1), num_move_batch
 
+        def get_all_config(PtoP_embeddings, PtoP_batch, p1_sum_of_routes, p1_Route_batch,
+                           p2_sum_of_routes, p2_Route_batch, batch_idx):
+
+            full_matrix = torch.tensor([], device=device)
+            for NrRoutes_move in range(1, max_to_move + 1):
+                a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
+                                               p2_sum_of_routes[p2_Route_batch == NrRoutes_move][None, :])
+                test = torch.cat((a, b), -1)
+                full_matrix = torch.cat((full_matrix, test.flatten(0, 1)))
+
+            PtoP_embeddings = torch.cat((PtoP_embeddings, full_matrix))
+            PtoP_batch = torch.cat((PtoP_batch, torch.tensor([batch_idx] * full_matrix.size(0), device=device)))
+
+            return PtoP_embeddings, PtoP_batch
+
+        def get_lim_config(PtoP_embeddings, PtoP_batch, p1_sum_of_routes, p2_sum_of_routes, batch_idx, max_to_move,
+                           P1_routes, p2_routes):
+
+            if p1_sum_of_routes.shape[0] == p2_sum_of_routes.shape[0]:
+                PtoP = torch.cat((p1_sum_of_routes, p2_sum_of_routes), dim=-1)
+
+            elif p1_sum_of_routes.shape[0] > p2_sum_of_routes.shape[0]:
+                p2_sum_of_routes = torch.cat(
+                    (p2_sum_of_routes, p2_sum_of_routes[:max_to_move].repeat((P1_routes - p2_routes, 1))))
+                PtoP = torch.cat((p1_sum_of_routes, p2_sum_of_routes), dim=-1)
+            else:
+                PtoP = torch.cat((p1_sum_of_routes, p2_sum_of_routes[:p1_sum_of_routes.shape[0]]), dim=-1)
+
+            PtoP_embeddings = torch.cat((PtoP_embeddings, PtoP))
+            PtoP_batch = torch.cat((PtoP_batch, torch.tensor([batch_idx] * PtoP.size(0), device=device)))
+
+            return PtoP_embeddings, PtoP_batch
+
         # batch size and indices are the same for both parents
         batch_size = len(p1_graph_data)
         P1_batch_indices = p1_graph_data.batch
@@ -103,21 +136,14 @@ class SREXmodel(nn.Module):
             p1_route_embedding = transform_to_route(p1_graph_data, p1_embeddings, P1_batch_indices, batch_idx)
             p2_route_embedding = transform_to_route(p2_graph_data, p2_embeddings, P2_batch_indices, batch_idx)
 
-            max_to_move = min(p1_route_embedding.size(0), p2_route_embedding.size(0))
+            p1_n, p2_n = p1_route_embedding.size(0), p2_route_embedding.size(0)
+            max_to_move = min(p1_n, p2_n)
 
             p1_sum_of_routes, p1_Route_batch = transform_to_nrRoutes(p1_route_embedding, max_to_move)
             p2_sum_of_routes, p2_Route_batch = transform_to_nrRoutes(p2_route_embedding, max_to_move)
 
-            full_matrix = torch.tensor([], device=device)
-
-            for NrRoutes_move in range(1, max_to_move + 1):
-                a, b = torch.broadcast_tensors(p1_sum_of_routes[p1_Route_batch == NrRoutes_move][:, None],
-                                               p2_sum_of_routes[p2_Route_batch == NrRoutes_move][None, :])
-                test = torch.cat((a, b), -1)
-                full_matrix = torch.cat((full_matrix, test.flatten(0, 1)))
-
-            PtoP_embeddings = torch.cat((PtoP_embeddings, full_matrix))
-            PtoP_batch = torch.cat((PtoP_batch, torch.tensor([batch_idx] * full_matrix.size(0), device=device)))
+            PtoP_embeddings, PtoP_batch = get_lim_config(PtoP_embeddings, PtoP_batch, p1_sum_of_routes, p2_sum_of_routes,
+                                                         batch_idx, max_to_move, p1_n, p2_n)
 
         return PtoP_embeddings, PtoP_batch
 
@@ -135,13 +161,13 @@ class SREXmodel(nn.Module):
         # Node(Customer) Embedding Parent1 (Current setup is without whole graph)
         P1_embedding = self.GAT_SolutionGraph(x=P1_nodefeatures.float(), edge_index=P1_edge_index,
                                               edge_attr=P1_edgeFeatures)
-        #P1_embedding = self.relu(P1_embedding)
+        # P1_embedding = self.relu(P1_embedding)
         # Node(Customer) Embedding Parent2 (Current setup is without whole graph)
         P2_embedding = self.GAT_SolutionGraph(x=P2_nodefeatures, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
-        #P2_embedding = self.relu(P2_embedding)
+        # P2_embedding = self.relu(P2_embedding)
 
         full_embedding = self.GAT_FullGraph(x=nodefeatures, edge_index=edge_index, edge_attr=edgeFeatures)
-        #full_embedding = self.relu(full_embedding)
+        # full_embedding = self.relu(full_embedding)
 
         P1f_embedding = torch.tensor([], device=device)
         P2f_embedding = torch.tensor([], device=device)
@@ -162,9 +188,9 @@ class SREXmodel(nn.Module):
         P2f_embedding = self.BothNorm(P2f_embedding)
 
         P1f_embedding = self.GAT_both(x=P1f_embedding, edge_index=P1_edge_index, edge_attr=P1_edgeFeatures)
-        #P1f_embedding = self.relu(P1f_embedding)
+        # P1f_embedding = self.relu(P1f_embedding)
         P2f_embedding = self.GAT_both(x=P2f_embedding, edge_index=P2_edge_index, edge_attr=P2_edgeFeatures)
-        #P2f_embedding = self.relu(P2f_embedding)
+        # P2f_embedding = self.relu(P2f_embedding)
 
         # node embeddings to PtoP_embeddings
         PtoP_embeddings, PtoP_batch = self.transform_clientEmbeddings_to_routeEmbeddings(parent1_data, parent2_data,

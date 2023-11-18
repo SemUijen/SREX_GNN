@@ -35,6 +35,11 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
             loss = torch.tensor(0.0, device=device)
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
+
+                p1, p2 = p1_data.num_routes[i], p2_data.num_routes[i]
+                shape = (min(p1, p2), p1, p2)
+                label = get_lim_labels(label, shape)
+
                 loss_func.weight = weights(label, output[batch == i], acc[i], device)
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
@@ -42,8 +47,7 @@ def train_model(model, device, trainloader, optimizer, loss_func, processed_dir,
                     label = scaler(label)
                     label = torch.sigmoid(label)
 
-                p1, p2 = p1_data.num_routes[i], p2_data.num_routes[i]
-                shape = (min(p1, p2), p1, p2)
+
                 results.add(label, output[batch == i], shape, instance_idx[i])
 
                 loss1 = loss_func(output[batch == i], label)
@@ -78,8 +82,10 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters, 
 
             for i in range(len(p1_data)):
                 label = torch.tensor(target[i].label, device=device, dtype=torch.float)
+                p1, p2 = p1_data.num_routes[i], p2_data.num_routes[i]
+                shape = (min(p1, p2), p1, p2)
+                label = get_lim_labels(label, shape)
                 loss_func.weight = weights(label, output[batch == i], acc[i], device)
-
                 if parameters["binary_label"]:
                     label = torch.where(label > 0, 1.0, 0.0)
 
@@ -94,6 +100,21 @@ def test_model(model, device, testloader, loss_func, processed_dir, parameters, 
 
         return loss, (loss / number_of_rows), metrics
 
+def get_lim_labels(label, shape):
+    max_move, p1, p2 = shape
+    list_test = []
+    copy = label.clone()
+    copy = copy.reshape(shape)
+    for i in range(max_move):
+        for i2 in range(p1):
+            if i2 < p2:
+                list_test.append([i, i2, i2])
+            else:
+                list_test.append([i, i2, 0])
+
+    indices = torch.tensor([list_test])
+    result = copy[indices[:, :, 0], indices[:, :, 1], indices[:, :, 2]]
+    return result.flatten()
 
 class Weights:
 
