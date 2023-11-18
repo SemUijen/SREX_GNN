@@ -23,7 +23,13 @@ import torch
 from Models import SREXmodel
 from data.utils.GraphData import ParentGraph, FullGraph
 from implementation.customHGS.SolutionTransformer import SolutionTransformer
+from torch_geometric.transforms import AddLaplacianEigenvectorPE
+from data.utils.Normalize import normalize_graphs
 from torch_geometric.data import Batch
+
+PE = AddLaplacianEigenvectorPE(6, attr_name=None, is_undirected=True)
+
+
 @dataclass
 class GeneticAlgorithmParams:
     """
@@ -94,26 +100,27 @@ class GeneticAlgorithm:
     """
 
     def __init__(
-        self,
-        data: ProblemData,
-        model: SREXmodel,
-        full_graph: FullGraph,
-        penalty_manager: PenaltyManager,
-        rng: RandomNumberGenerator,
-        population: Population,
-        search_method: SearchMethod,
-        crossover_op: Callable[
-            [
-                Tuple[Solution, Solution],
-                ProblemData,
-                CostEvaluator,
-                RandomNumberGenerator,
+            self,
+            data: ProblemData,
+            model: SREXmodel,
+            model_CostEvaluator: CostEvaluator,
+            full_graph: FullGraph,
+            penalty_manager: PenaltyManager,
+            rng: RandomNumberGenerator,
+            population: Population,
+            search_method: SearchMethod,
+            crossover_op: Callable[
+                [
+                    Tuple[Solution, Solution],
+                    ProblemData,
+                    CostEvaluator,
+                    RandomNumberGenerator,
+                ],
+                Solution,
             ],
-            Solution,
-        ],
-        initial_solutions: Collection[Solution],
-        params: GeneticAlgorithmParams = GeneticAlgorithmParams(),
-        sol_transform: SolutionTransformer = SolutionTransformer(),
+            initial_solutions: Collection[Solution],
+            params: GeneticAlgorithmParams = GeneticAlgorithmParams(),
+            sol_transform: SolutionTransformer = SolutionTransformer(),
 
     ):
         if len(initial_solutions) == 0:
@@ -130,6 +137,7 @@ class GeneticAlgorithm:
         self._model = model
         self._full_graph = full_graph
         self._sol_transform = sol_transform
+        self._model_CostEvaluator = model_CostEvaluator
 
         # Find best feasible initial solution if any exist, else set a random
         # infeasible solution (with infinite cost) as the initial best.
@@ -176,12 +184,16 @@ class GeneticAlgorithm:
 
             # TODO: add implementation Loop
             parents = self._pop.select(self._rng, self._cost_evaluator)
-            configuration = self.get_srex_config(parents)
+            if iters >= 5000:
+                configuration, boost = self.get_srex_config(parents)
 
-            offspring = self._crossover(
-                parents, self._data, self._cost_evaluator, configuration
-            )
-            self._improve_offspring(offspring)
+                offspring = self._crossover(parents, self._data, self._cost_evaluator,
+                                            self._rng, configuration)
+                self._improve_offspring(offspring, boost)
+            else:
+                offspring = self._crossover(parents, self._data, self._cost_evaluator,
+                                            self._rng)
+                self._improve_offspring(offspring, False)
 
             new_best = self._cost_evaluator.cost(self._best)
 
@@ -195,7 +207,7 @@ class GeneticAlgorithm:
         end = time.perf_counter() - start
         return Result(self._best, stats, iters, end)
 
-    def _improve_offspring(self, sol: Solution):
+    def _improve_offspring(self, sol: Solution, boost: Bool):
         def is_new_best(sol):
             cost = self._cost_evaluator.cost(sol)
             best_cost = self._cost_evaluator.cost(self._best)
@@ -206,7 +218,11 @@ class GeneticAlgorithm:
             self._pm.register_load_feasible(not sol.has_excess_load())
             self._pm.register_time_feasible(not sol.has_time_warp())
 
-        sol = self._search(sol, self._cost_evaluator)
+        if boost:
+            sol = self._search(sol, self._model_CostEvaluator)
+        else:
+            sol = self._search(sol, self._cost_evaluator)
+
         add_and_register(sol)
 
         if is_new_best(sol):
@@ -215,8 +231,8 @@ class GeneticAlgorithm:
         # Possibly repair if current solution is infeasible. In that case, we
         # penalise infeasibility more using a penalty booster.
         if (
-            not sol.is_feasible()
-            and self._rng.rand() < self._params.repair_probability
+                not sol.is_feasible()
+                and self._rng.rand() < self._params.repair_probability
         ):
             sol = self._search(sol, self._pm.get_booster_cost_evaluator())
 
@@ -228,49 +244,55 @@ class GeneticAlgorithm:
 
     def get_srex_config(self, parents):
 
-
         parent1, parent2 = parents
-        client_features = self._full_graph.x
-        client_route_vector, edge_index, edge_weight, num_routes = self._sol_transform(instance=self._data,
-                                                                                                       get_full_graph=False,
-                                                                                                       parent_solution=parent1)
 
-        p1_data = ParentGraph(client_route_vector, edge_index, edge_weight, num_routes, client_features)
+        p1_data = ParentGraph(*self._sol_transform(instance=self._data,
+                                                   get_full_graph=False,
+                                                   parent_solution=parent1))
+        p1_data = normalize_graphs(p1_data)
+        p1_data.to("cuda")
+        p1_data = PE(p1_data)
 
-        client_route_vector, edge_index, edge_weight, num_routes = self._sol_transform(instance=self._data,
-                                                                                                       get_full_graph=False,
-                                                                                                       parent_solution=parent2)
-        p2_data = ParentGraph(client_route_vector, edge_index, edge_weight, num_routes, client_features)
-
+        p2_data = ParentGraph(*self._sol_transform(instance=self._data,
+                                                   get_full_graph=False,
+                                                   parent_solution=parent2))
+        p2_data = normalize_graphs(p2_data)
+        p2_data.to("cuda")
+        p2_data = PE(p2_data)
 
         p1_b = Batch.from_data_list([p1_data])
         p2_b = Batch.from_data_list([p2_data])
         fg_b = Batch.from_data_list([self._full_graph])
         instance_batch = torch.tensor(0).repeat(len(self._full_graph.x))
 
+        self._model.to("cuda")
+        fg_b.to("cuda")
+        instance_batch.to("cuda")
 
         self._model.eval()
-        out, batch = self._model(p1_b, p2_b, fg_b, instance_batch)
+        out, batch = self._model(p1_b, p2_b, fg_b, instance_batch, 1)
 
         p1, p2, numMove = parent1.num_routes(), parent2.num_routes(), min(parent1.num_routes(), parent2.num_routes())
 
-        if out.max() == 0:
+        output_shaped = out.reshape(numMove, p1, p2)
+        max_v = output_shaped.max()
 
-            idx1 = self._rng.randint(parent1.num_routes())
-            idx2 = idx1 if idx1 < parent2.num_routes() else 0
-            max_routes_to_move = min(parent1.num_routes(), parent2.num_routes())
-            num_routes_to_move = self._rng.randint(max_routes_to_move) + 1
+        SREX_param = torch.where(output_shaped > 0.5)
 
-            return idx1, idx2 , num_routes_to_move
+        if SREX_param[0].nelement() != 0:
+            pos = self._rng.randint(SREX_param[0].nelement())
+            numMove, p1_idx, P2_idx = SREX_param[0][pos], SREX_param[1][pos], SREX_param[2][pos]
+            return (p1_idx, P2_idx, numMove + 1), True
+        elif torch.where(output_shaped > 0.3)[0].nelement() != 0:
+            SREX_param = torch.where(output_shaped > 0.3)
+            pos = self._rng.randint(SREX_param[0].nelement())
+            numMove, p1_idx, P2_idx = SREX_param[0][pos], SREX_param[1][pos], SREX_param[2][pos]
+            return (p1_idx, P2_idx, numMove + 1), False
 
         else:
+            return None, False
 
-            output_shaped = out.reshape(numMove, p1, p2)
-            max_v = output_shaped.max()
-            SREX_param = torch.where(output_shaped == max_v)
 
-            numMove, p1_idx, P2_idx = SREX_param[0][0], SREX_param[1][0], SREX_param[2][0]
-            return p1_idx, P2_idx, numMove+1
 
 
 

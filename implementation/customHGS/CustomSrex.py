@@ -10,10 +10,11 @@ from pyvrp.crossover._crossover import selective_route_exchange as _srex
 
 
 def selective_route_exchange(
-    parents: Tuple[Solution, Solution],
-    data: ProblemData,
-    cost_evaluator: CostEvaluator,
-    configuration: Tuple[int,int, int],
+        parents: Tuple[Solution, Solution],
+        data: ProblemData,
+        cost_evaluator: CostEvaluator,
+        rng: RandomNumberGenerator,
+        configuration: Tuple[int, int, int] = None,
 ) -> Solution:
     """
     This crossover operator due to Nagata and Kobayashi [1]_ combines routes
@@ -46,7 +47,16 @@ def selective_route_exchange(
            536 - 545.
     """
 
-    idx1, idx2, num_routes_to_move = configuration
+    if configuration:
+        idx1, idx2, num_routes_to_move = configuration
+
+    else:
+        first, second = parents
+        idx1 = rng.randint(first.num_routes())
+        idx2 = idx1 if idx1 < second.num_routes() else 0
+        max_routes_to_move = min(first.num_routes(), second.num_routes())
+        num_routes_to_move = rng.randint(max_routes_to_move) + 1
+
     return _srex(
         parents, data, cost_evaluator, (idx1, idx2), num_routes_to_move
     )
