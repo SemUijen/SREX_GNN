@@ -1,5 +1,5 @@
 from torch import Tensor
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from plotting.plot_srex_parameters import plot_srex_parameters
 
 
@@ -18,13 +18,14 @@ class Result:
         self.config_shape.append(shape)
         self.instances.append(instance_id.item())
 
-    def plot(self, idx: int):
+    def plot(self, idx: int, only_pos: Optional[bool] = True):
         label = self.binary_label[idx]
         output = self.output[idx]
         shape = self.config_shape[idx]
         instance_name = self.instance_name(self.instances[idx])
-        plot_srex_parameters(label.view(shape).numpy(), title=f"label: {instance_name}")
-        plot_srex_parameters(output.view(shape).numpy(), title=f"output: {instance_name}")
+        plot_srex_parameters(label.view(shape).numpy(), title=f"label: {instance_name}", only_pos=only_pos)
+        plot_srex_parameters(output.view(shape).numpy(), title=f"output: {instance_name}", only_pos=only_pos)
+
 
     @staticmethod
     def instance_name(key: int):
