@@ -18,14 +18,31 @@ class Result:
         self.config_shape.append(shape)
         self.instances.append(instance_id.item())
 
-    def plot(self, idx: int, only_pos: Optional[bool] = True):
+    def plot(self, idx: int, only_pos: Optional[bool] = True, lim_labels: Optional[bool] = False):
         label = self.binary_label[idx]
         output = self.output[idx]
         shape = self.config_shape[idx]
         instance_name = self.instance_name(self.instances[idx])
-        plot_srex_parameters(label.view(shape).numpy(), title=f"label: {instance_name}", only_pos=only_pos)
-        plot_srex_parameters(output.view(shape).numpy(), title=f"output: {instance_name}", only_pos=only_pos)
+        if lim_labels:
+            indices = self.get_lim_indices(idx)
+            plot_srex_parameters(label, indices=indices, title=f"label: {instance_name}", lim_labels=True)
+            plot_srex_parameters(output, indices=indices, title=f"label: {instance_name}", lim_labels=True)
 
+        else:
+            plot_srex_parameters(label.view(shape).numpy(), title=f"label: {instance_name}")
+            plot_srex_parameters(output.view(shape).numpy(), title=f"output: {instance_name}")
+
+    def get_lim_indices(self, idx):
+        max_move, p1, p2 = self.config_shape[idx]
+        list_test = []
+        for i in range(max_move):
+            for i2 in range(p1):
+                if i2 < p2:
+                    list_test.append([i, i2, i2])
+                else:
+                    list_test.append([i, i2, 0])
+
+        return list_test
 
     @staticmethod
     def instance_name(key: int):

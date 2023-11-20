@@ -1,7 +1,7 @@
 from matplotlib.colors import Colormap
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import torch
 
@@ -51,7 +51,8 @@ def plot_srex_parameters(
         fig: Optional[plt.figure] = None,
         cmap: Optional[Colormap] = None,
         title: Optional[str] = None,
-        only_pos: Optional[bool] = False,
+        lim_labels: Optional[bool] = False,
+        indices: Optional[List[int]] = None
 ) -> None:
     if not cmap:
         cmap = plt.colormaps["seismic_r"]
@@ -61,15 +62,17 @@ def plot_srex_parameters(
 
     gs = fig.add_gridspec(3, 2, width_ratios=(2 / 5, 3 / 5))
 
-    move = np.indices(parameter_array.shape)[0]
-    p1 = np.indices(parameter_array.shape)[1]
-    p2 = np.indices(parameter_array.shape)[2]
-    col = parameter_array.flatten()
+    if lim_labels:
+        move = [item[0] for item in indices]
+        p1 = [item[1] for item in indices]
+        p2 = [item[2] for item in indices]
+        col = parameter_array
 
-    if only_pos:
-        p1 = p1.clip(min=0.5)
-        p2 = p2.clip(min=0.5)
-        move = move.clip(min=0.5)
+    else:
+        move = np.indices(parameter_array.shape)[0]
+        p1 = np.indices(parameter_array.shape)[1]
+        p2 = np.indices(parameter_array.shape)[2]
+        col = parameter_array.flatten()
 
     plot_parameters_2D(p1, p2, col, ('p1_idx', 'p2_idx'), ax=fig.add_subplot(gs[0, 0]))
     plot_parameters_2D(p1, move, col, ('p1_idx', 'NumMoved'), ax=fig.add_subplot(gs[1, 0]))
