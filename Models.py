@@ -4,13 +4,13 @@ from torch_geometric.nn import GATConv, GATv2Conv
 from torch_geometric.data import Data
 from torch.nn.functional import pad, softmax
 from torch import Tensor
-from torch_geometric.nn.norm import BatchNorm, LayerNorm
+from torch_geometric.nn.norm import BatchNorm, LayerNorm, GraphNorm
 
 
 class SREXmodel(nn.Module):
 
     def __init__(self, num_node_features: int, hidden_dim: int = 64, num_heads: int = 8,
-                 dropout: float = 0.2):
+                 dropout: float = 0.05):
         super(SREXmodel, self).__init__()
 
         self.num_node_features = num_node_features
@@ -31,8 +31,8 @@ class SREXmodel(nn.Module):
         self.dropout = nn.Dropout(dropout)
         # TODO: add gat model for FULL Graph
 
-        self.PtoPNorm = BatchNorm(8 * self.num_heads * self.hidden_dim)
-        self.BothNorm = BatchNorm(2 * self.num_heads * self.hidden_dim)
+        self.PtoPNorm = BatchNorm(8 * self.num_heads * self.hidden_dim, track_running_stats=False)
+        self.BothNorm = BatchNorm(2 * self.num_heads * self.hidden_dim, track_running_stats=False)
 
         # TODO: Add extra layers
         self.fc1 = nn.Linear(8 * self.num_heads * self.hidden_dim, int(self.num_heads * self.hidden_dim) * 4)
