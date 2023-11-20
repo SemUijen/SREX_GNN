@@ -4,7 +4,10 @@ from typing import Union
 from .Distance import Distance
 from .Demand import Demand
 from .NodePosition import CenterScale
-def normalize_graphs(data: Data, max_distance: Union[int, float] = None) -> Data:
+from .TimeWindows import TimeWindows
+
+
+def normalize_graphs(data: Data, max_distance: Union[int, float] = None, TW: bool = False) -> Data:
     if max_distance:
         norm_distance = Distance(max_value=max_distance, cat=False)
     else:
@@ -16,5 +19,9 @@ def normalize_graphs(data: Data, max_distance: Union[int, float] = None) -> Data
 
     pos_scale = CenterScale()
     data = pos_scale(data)
+
+    if TW:
+        scaleTime = TimeWindows()
+        data = scaleTime(data)
 
     return data

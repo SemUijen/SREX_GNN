@@ -25,10 +25,11 @@ class SolutionTransformer:
         return Solution(data=instance, routes=route)
 
     @staticmethod
-    def get_node_features(instance: ProblemData) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def get_node_features(instance: ProblemData) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         client_features = []
         client_demand = []
         client_pos = []
+        client_time = []
         capacity = instance.vehicle_type(0).capacity
         num_veh = instance.num_vehicles
 
@@ -37,13 +38,15 @@ class SolutionTransformer:
             client_features.append([num_veh])
             client_demand.append([client.demand, capacity])
             client_pos.append([client.x, client.y])
+            client_time.append([client.tw_early, client.tw_late, client.service_duration])
 
         depot = instance.client(0)
-        depot_pos = depot.x, depot.y
+        depot_pos = depot.x, depot.y, depot.tw_late
         return (torch.tensor(client_features, dtype=torch.float),
                 torch.tensor(client_demand, dtype=torch.float),
                 torch.tensor(client_pos, dtype=torch.float),
-                torch.tensor(depot_pos, dtype=torch.float))
+                torch.tensor(depot_pos, dtype=torch.float),
+                torch.tensor(client_time, dtype=torch.float))
 
 
     @staticmethod
@@ -97,13 +100,13 @@ class SolutionTransformer:
         edge_weight = edge_features[1:, 1:][row, col]
         # total number of routes
         num_routes = solution.num_routes()
-        client_features, client_demand, client_pos, depot_pos = self.get_node_features(instance)
+        client_features, client_demand, client_pos, depot_pos, client_time = self.get_node_features(instance)
 
-        return client_route_vector, edge_index, edge_weight, num_routes, client_features, client_demand, client_pos, depot_pos
+        return client_route_vector, edge_index, edge_weight, num_routes, client_features, client_demand, client_pos, depot_pos, client_time
 
     def full_graph_to_input(self, instance: ProblemData):
 
-        client_features, client_demand, client_pos, depot_pos  = self.get_node_features(instance)
+        client_features, client_demand, client_pos, depot_pos, client_time = self.get_node_features(instance)
         edge_features = self.get_edge_features_from_instance(instance)
 
         # number of nodes are total clients + depot
@@ -115,7 +118,7 @@ class SolutionTransformer:
         row, col = edge_index
         edge_weight = edge_features[1:, 1:][row, col]
 
-        return edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos
+        return edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos, client_time
 
     def __call__(self, instance_name: str, get_full_graph: bool, parent_solution: Solution = None):
 

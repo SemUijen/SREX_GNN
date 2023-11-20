@@ -17,7 +17,7 @@ class MyLabel:
 
 class ParentGraphsDataset(Dataset):
     def __init__(self, root: str, raw_files: List[str], instances: List[str], use_instances: List[str], is_processed: bool = False,
-                 pre_transform: SolutionTransformer = SolutionTransformer(),
+                 use_time: bool = False, pre_transform: SolutionTransformer = SolutionTransformer(),
                  transform=None, pre_filter=None):
         self.processed_files = []
         self.is_processed = is_processed
@@ -30,6 +30,7 @@ class ParentGraphsDataset(Dataset):
         self.instances = instances
         self.instance_dict = {}
         self.use_instances = use_instances
+        self.use_time = use_time
         super().__init__(root, transform, pre_transform, pre_filter)
 
     @property
@@ -51,10 +52,11 @@ class ParentGraphsDataset(Dataset):
         # First get FullGraphs
         idx = 0
         for instance in self.instances:
-            edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos = self.pre_transform(instance_name=instance,
-                                                                          get_full_graph=True)
-            data = FullGraph(edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos)
-            data = normalize_graphs(data)
+            edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos, client_time = self.pre_transform(instance_name=instance,
+                                                                                                                get_full_graph=True)
+
+            data = FullGraph(edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos, client_time)
+            data = normalize_graphs(data, TW=self.use_time)
             data = PE(data)
             max_distance = edge_weight.max().item()
             file_name = f'FullGraph_{idx}.pt'
@@ -88,13 +90,11 @@ class ParentGraphsDataset(Dataset):
                             solution = raw_data["parent_routes"][batch][i]
                             idx = raw_data["parent_ids"][batch][i]
                             max_dis = self.instance_dict[route_instance][1]
-                            client_route_vector, edge_index, edge_weight, num_routes, client_features , client_demand, client_pos, depot_pos  = self.pre_transform(
-                                instance_name=route_instance, get_full_graph=False,
-                                parent_solution=solution)
 
-                            data = ParentGraph(client_route_vector, edge_index, edge_weight, num_routes,
-                                               client_features, client_demand, client_pos, depot_pos)
-                            data = normalize_graphs(data, max_distance=max_dis)
+                            data = ParentGraph(*self.pre_transform(instance_name=route_instance,
+                                                                  get_full_graph=False, parent_solution=solution))
+
+                            data = normalize_graphs(data, max_distance=max_dis, TW=self.use_time)
                             data = PE(data)
                             file_name = f'ParentGraph_{idx}.pt'
                             self.processed_files.append(file_name)

@@ -15,9 +15,10 @@ class Center(BaseTransform):
             self,
             data: Union[Data, HeteroData],
     ) -> Union[Data, HeteroData]:
+        depot_pos = data.depot_pos[0:2]
         for store in data.node_stores:
             if hasattr(store, 'pos'):
-                store.pos = store.pos - data.depot_pos
+                store.pos = store.pos - depot_pos
         return data
 
 

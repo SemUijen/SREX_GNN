@@ -31,9 +31,11 @@ def main(parameters):
     # test_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308, 386)])
 
     trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names,
-                                   instances=instances, is_processed=False, use_instances=use_instances)
+                                   instances=instances, is_processed=False, use_instances=use_instances,
+                                   use_time=True)
     testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names,
-                                  instances=instances, is_processed=False, use_instances=use_instances)
+                                  instances=instances, is_processed=False, use_instances=use_instances,
+                                  use_time=True)
 
     sampler = GroupSampler(data_length=len(trainset), group_size=12, batch_size=2)
     train_loader = MyDataLoader(dataset=trainset, batch_sampler=sampler, num_workers=0,
