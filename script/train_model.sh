@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=Train_GNN
-#SBATCH --output=logging/test_creation_speed-%j.out
-#SBATCH --error=logging/test_creation_speed-%j.error
+#SBATCH --output=logging/Limconfig-%j.out
+#SBATCH --error=logging/Limconfig-%j.error
 #SBATCH --chdir /home/suijen/SREX_GNN
 #SBATCH --export=ALL
 #SBATCH --get-user-env=L
@@ -11,7 +11,7 @@
 #SBATCH --cpus-per-task=18
 #SBATCH --gpus=1
 #SBATCH --partition=gpu
-#SBATCH --time=03:00:00
+#SBATCH --time=08:30:00
 
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=s.j.uijen@tilburguniversity.edu
