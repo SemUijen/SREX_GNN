@@ -19,7 +19,7 @@ def plot_parameters_2D(
     if not ax:
         _, ax = plt.subplots()
 
-    ax.scatter(x, y, cmap=cmap, c=col, alpha=0.8, vmin=0, vmax=1)
+    ax.scatter(x, y, cmap=cmap, c=col, alpha=col, vmin=0, vmax=1)
     ax.set_xlabel(axis_labels[0])
     ax.set_ylabel(axis_labels[1])
 
@@ -38,7 +38,8 @@ def plot_parameters_3D(
     if not ax:
         _, ax = plt.subplots()
 
-    clm = ax.scatter(x, y, z, c=col, cmap=cmap, alpha=0.8, vmin=0, vmax=1)
+
+    clm = ax.scatter(x[col > 0.5], y[col > 0.5], z[col > 0.5], c=col[col > 0.5], cmap=cmap, alpha=0.9, vmin=0, vmax=1)
     ax.set_xlabel(axis_labels[0])
     ax.set_ylabel(axis_labels[1])
     ax.set_zlabel(axis_labels[2])
@@ -63,15 +64,15 @@ def plot_srex_parameters(
     gs = fig.add_gridspec(3, 2, width_ratios=(2 / 5, 3 / 5))
 
     if lim_labels:
-        move = [item[0] for item in indices]
-        p1 = [item[1] for item in indices]
-        p2 = [item[2] for item in indices]
-        col = parameter_array
+        move = np.array([item[0] for item in indices])
+        p1 = np.array([item[1] for item in indices])
+        p2 = np.array([item[1] for item in indices])
+        col = np.array(parameter_array)
 
     else:
-        move = np.indices(parameter_array.shape)[0]
-        p1 = np.indices(parameter_array.shape)[1]
-        p2 = np.indices(parameter_array.shape)[2]
+        move = np.indices(parameter_array.shape)[0].flatten()
+        p1 = np.indices(parameter_array.shape)[1].flatten()
+        p2 = np.indices(parameter_array.shape)[2].flatten()
         col = parameter_array.flatten()
 
     plot_parameters_2D(p1, p2, col, ('p1_idx', 'p2_idx'), ax=fig.add_subplot(gs[0, 0]))
