@@ -4,7 +4,7 @@ from typing import Union, List, Tuple
 
 import torch
 from torch_geometric.data import Dataset
-from torch_geometric.transforms import AddLaplacianEigenvectorPE
+from torch_geometric.transforms import AddLaplacianEigenvectorPE, AddRandomWalkPE
 from data.utils.GraphData import FullGraph, ParentGraph
 from data.utils import SolutionTransformer
 from data.utils.Normalize import normalize_graphs
