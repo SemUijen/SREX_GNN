@@ -19,9 +19,9 @@ def main(parameters):
     instances_TW = ["ORTEC-VRPTW-ASYM-0bdff870-d1-n458-k35", "R2_8_9", 'R1_4_10']
     instances = instances_VRP + instances_TW
 
-    use_instances = instances_VRP
+    use_instances = ["X-n439-k37", "X-n393-k38"]
     # Train_test split 772 cvrp files, 386 tw files FILE 88 331 are corrupted
-    training = list(range(0, 88)) #+ list(range(89, 331)) + list(range(332, 618))
+    training = list(range(0, 88)) + list(range(89, 331)) + list(range(332, 618))
     test = list(range(618, 680))
     train_file_names = [f"batch_cvrp_{i}_rawdata.pkl" for i in training]
     # train_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308)])
@@ -31,11 +31,11 @@ def main(parameters):
     # test_file_names.extend([f"batch_tw_{i}_rawdata.pkl" for i in range(308, 386)])
 
     trainset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=train_file_names,
-                                   instances=instances, is_processed=False, use_instances=use_instances,
-                                   use_time=True)
+                                   instances=instances, is_processed=True, use_instances=use_instances,
+                                   use_time=False)
     testset = ParentGraphsDataset(root=osp.join(os.getcwd(), 'data/model_data'), raw_files=test_file_names,
-                                  instances=instances, is_processed=False, use_instances=use_instances,
-                                  use_time=True)
+                                  instances=instances, is_processed=True, use_instances=use_instances,
+                                  use_time=False)
 
     sampler = GroupSampler(data_length=len(trainset), group_size=12, batch_size=2)
     train_loader = MyDataLoader(dataset=trainset, batch_sampler=sampler, num_workers=0,
