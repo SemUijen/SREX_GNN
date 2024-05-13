@@ -23,7 +23,7 @@ For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used
 Figure 1 illustrates the model proposed in this thesis. The architecture comprises three main elements: [the Graph Attention (GAT)](5) networks, the embedding transformations, and, finally, the fully-connected (FC) layers.
 
 <div class="container" align="center">
-    <img width=350 src="images/Model_diagram.png" />
+    <img width=350 src="images/method_images//Model_diagram.png" />
     <div class="overlay">Figure 1: Diagram of proposed model</div>
 </div>
 </br>
@@ -32,7 +32,7 @@ The input for the model consists of three different graphs: Parent-1 and Parent-
 ### Node Embedding Transformation
 
 <div class="container" align="center">
-    <img src="images/NodeEmbeddingTransformation.png" />
+    <img src="images/method_images/NodeEmbeddingTransformation.png" />
     <div class="overlay">Figure 2: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a single local selection</div>
 </div>
 
