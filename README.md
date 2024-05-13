@@ -4,7 +4,7 @@ This repository contains the code of my thesis, which delved into optimizing the
 For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used.
 
 > [!TIP]
-> If you are new to vehicle routing or metaheuristics, you might benefit from first reading the [introduction to VRP][3] and [introduction to HGS][4] pages.
+> If you are new to vehicle routing or metaheuristics, The PyVRP library perfectly explains the basics on their website: [introduction to VRP][3] and [introduction to HGS][4] pages.
 
 ## Table of Content
 
