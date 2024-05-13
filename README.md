@@ -14,10 +14,10 @@ For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used
 
 ## Summary of Research
 
-<p align="center">
-    <img widht=300 src="images/Model_diagram.png" />
-    <figcaption align="center">Figure 1: Diagram of proposed model</figcaption>
-</p>
+<div class="container" align="center">
+    <img width=300 src="images/Model_diagram.png" />
+    <div class="overlay">Diagram of proposed model</div>
+</div>
 
 <p>
     <figure align="center">
