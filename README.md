@@ -26,7 +26,8 @@ Figure 1 illustrates the model proposed in this thesis. The architecture compris
     <div class="overlay">Figure 1: Diagram of proposed model</div>
 </div>
 </br>
-The input for the model consists of three different graphs: Parent-1 and Parent-2 which both represent a single solution to a VRP-problems, and the Full Graph which represent the whole VRP-problem graph(i.e. all edges and nodes of the problem).   
+The input for the model consists of three different graphs: Parent-1 and Parent-2 which both represent a single solution to a VRP-problems, and the Full Graph which represent the whole VRP-problem graph(i.e. all edges and nodes of the problem). 
+  
 The output, shown in figure 2, is heatmap showing the likely best configuration of the Selective Route Exchange Crossover function given Parent-1 and Parent-2.
 
 <div class="container" align="center">
