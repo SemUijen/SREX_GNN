@@ -21,10 +21,7 @@ For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used
 
 <figure align="center">
     <img src="images/NodeEmbeddingTransformation.png" />
-    <figcaption>Figure 1: Diagram of Embedding Transformations: Each color represent a single h-dimensional
-embedding representing a node, route or a single local selection
-NeuroSREX 26
-</figcaption>
+    <figcaption>Figure 1: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a single local selection NeuroSREX 26</figcaption>
 </figure>
 
 ## Usage Instructions
