@@ -14,7 +14,7 @@ For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used
 
 ## Summary of Research
 
-![f](images/EmbeddingsTransformation.jpg "Title")
+![EmbeddingTransformation](images/EmbeddingsTransformation.jpg)
 
 ## Usage Instructions
 
