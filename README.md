@@ -1,10 +1,10 @@
 ## Graph Neural Network for optimizing Hybrid Genetic Search
 
-This repository contains the code of my thesis, which delved into optimizing the hybrid genetic search ([Vidal (2022)][1]).  
+This repository contains the code of my thesis, which delved into optimizing the hybrid genetic search algorithm([Vidal (2022)][1]).  
 For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used.
 
 > [!TIP]
-> If you are new to vehicle routing or metaheuristics, The PyVRP library perfectly explains the basics on their website: [introduction to VRP][3] and [introduction to HGS][4] pages.
+> If you are new to vehicle routing or metaheuristics, the PyVRP library perfectly explains the basics on their website: [introduction to VRP][3] and [introduction to HGS][4].
 
 ## Table of Content
 
@@ -13,6 +13,8 @@ For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used
 - [Code Documentation](#code-documentation)
 
 ## Summary of Research
+
+![f](images/EmbeddingsTransformation.jpg "Title")
 
 ## Usage Instructions
 
