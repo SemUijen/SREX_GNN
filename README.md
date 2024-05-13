@@ -1,6 +1,6 @@
 ## Graph Neural Network for optimizing Hybrid Genetic Search
 
-This repository contains the code of my thesis, which delved into optimizing the hybrid genetic search algorithm([Vidal (2022)][1]).  
+This repository contains the code of my thesis, which delved into optimizing the hybrid genetic search algorithm ([Vidal (2022)][1]).  
 For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used.
 
 > [!TIP]
@@ -14,9 +14,18 @@ For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used
 
 ## Summary of Research
 
-<img align="center" width=500 src="images/EmbeddingTransformation.jpg" />
+<figure align="center">
+    <img width=400 src="images/Model_diagram.png" />
+    <figcaption>Figure 2: Diagram of proposed Model</figcaption>
+</figure>
 
-<img align="Center" width=200 src="images/Model_diagram.png" />
+<figure align="center">
+    <img src="images/NodeEmbeddingTransformation.png" />
+    <figcaption>Figure 1: Diagram of Embedding Transformations: Each color represent a single h-dimensional
+embedding representing a node, route or a single local selection
+NeuroSREX 26
+</figcaption>
+</figure>
 
 ## Usage Instructions
 
