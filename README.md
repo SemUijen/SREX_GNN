@@ -15,16 +15,14 @@ For this thesis, the [PyVRP][2] implementation of Hybrid Genetic Search was used
 ## Summary of Research
 
 <div class="container" align="center">
-    <img width=300 src="images/Model_diagram.png" />
-    <div class="overlay">Diagram of proposed model</div>
+    <img width=350 src="images/Model_diagram.png" />
+    <div class="overlay">Figure 1: Diagram of proposed model</div>
 </div>
 
-<p>
-    <figure align="center">
-        <img src="images/NodeEmbeddingTransformation.png" />
-        <figcaption>Figure 1: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a single local selection NeuroSREX 26</figcaption>
-    </figure>
-</p>
+<div class="container" align="center">
+    <img src="images/NodeEmbeddingTransformation.png" />
+    <div class="overlay">Figure 1: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a single local selection NeuroSREX 26</div>
+</div>
 
 ## Usage Instructions
 
