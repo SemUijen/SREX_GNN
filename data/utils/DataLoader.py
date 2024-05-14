@@ -1,19 +1,14 @@
-import math
-from typing import Tuple, Sequence, Union, List, Optional, Union
-import torch
-from torch_geometric.loader import DataLoader
-from torch.utils.data import random_split
-
-from data.utils.ParentGraphDataset import ParentGraphsDataset, MyLabel
-from data.utils.BatchSampler import GroupSampler
 from collections.abc import Mapping
+from typing import List, Optional, Sequence, Union
 
+import torch
 import torch.utils.data
 from torch.utils.data.dataloader import default_collate
-
 from torch_geometric.data import Batch, Dataset
 from torch_geometric.data.data import BaseData
 from torch_geometric.data.datapipes import DatasetAdapter
+
+from data.utils.ParentGraphDataset import MyLabel
 
 
 class MyCollater:
@@ -25,9 +20,7 @@ class MyCollater:
         elem = batch[0]
 
         if isinstance(elem, BaseData):
-
-            return Batch.from_data_list(batch, self.follow_batch,
-                                        self.exclude_keys)
+            return Batch.from_data_list(batch, self.follow_batch, self.exclude_keys)
         elif isinstance(elem, MyLabel):
             return batch
         elif isinstance(elem, torch.Tensor):
@@ -39,14 +32,14 @@ class MyCollater:
         elif isinstance(elem, str):
             return batch
         elif isinstance(elem, Mapping):
-            print(len(elem['labels']))
+            print(len(elem["labels"]))
             return {key: self([data[key] for data in batch]) for key in elem}
-        elif isinstance(elem, tuple) and hasattr(elem, '_fields'):
+        elif isinstance(elem, tuple) and hasattr(elem, "_fields"):
             return type(elem)(*(self(s) for s in zip(*batch)))
         elif isinstance(elem, Sequence) and not isinstance(elem, str):
             return [self(s) for s in zip(*batch)]
 
-        raise TypeError(f'DataLoader found invalid type: {type(elem)}')
+        raise TypeError(f"DataLoader found invalid type: {type(elem)}")
 
     def collate(self, batch):  # pragma: no cover
         # TODO Deprecated, remove soon.
@@ -74,16 +67,16 @@ class MyDataLoader(torch.utils.data.DataLoader):
     """
 
     def __init__(
-            self,
-            dataset: Union[Dataset, Sequence[BaseData], DatasetAdapter],
-            batch_size: int = 1,
-            shuffle: bool = False,
-            follow_batch: Optional[List[str]] = None,
-            exclude_keys: Optional[List[str]] = None,
-            **kwargs,
+        self,
+        dataset: Union[Dataset, Sequence[BaseData], DatasetAdapter],
+        batch_size: int = 1,
+        shuffle: bool = False,
+        follow_batch: Optional[List[str]] = None,
+        exclude_keys: Optional[List[str]] = None,
+        **kwargs,
     ):
         # Remove for PyTorch Lightning:
-        kwargs.pop('collate_fn', None)
+        kwargs.pop("collate_fn", None)
 
         # Save for PyTorch Lightning < 1.6:
         self.follow_batch = follow_batch

@@ -1,23 +1,22 @@
-from typing import Union, Tuple
+from typing import Union
 
 import torch
 from torch_geometric.data import Data, HeteroData
-from torch_geometric.data.datapipes import functional_transform
 from torch_geometric.transforms import BaseTransform
 
 
 class Center(BaseTransform):
     """Centers node positions :obj:`data.pos` around the origin.
-       the origin is defined as the position of Depot
+    the origin is defined as the position of Depot
     """
 
     def forward(
-            self,
-            data: Union[Data, HeteroData],
+        self,
+        data: Union[Data, HeteroData],
     ) -> Union[Data, HeteroData]:
         depot_pos = data.depot_pos[0:2]
         for store in data.node_stores:
-            if hasattr(store, 'pos'):
+            if hasattr(store, "pos"):
                 store.pos = store.pos - depot_pos
         return data
 

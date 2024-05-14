@@ -1,15 +1,18 @@
 import os.path as osp
 import pickle
-from typing import Union, List, Tuple
+from typing import List, Tuple, Union
 
 import torch
 from torch_geometric.data import Dataset
-from torch_geometric.transforms import AddLaplacianEigenvectorPE, AddRandomWalkPE
-from data.utils.GraphData import FullGraph, ParentGraph
+from torch_geometric.transforms import AddLaplacianEigenvectorPE
+
 from data.utils import SolutionTransformer
+from data.utils.GraphData import FullGraph, ParentGraph
 from data.utils.Normalize import normalize_graphs
+
 k = 6
 PE = AddLaplacianEigenvectorPE(k, attr_name=None, is_undirected=True)
+
 
 class MyLabel:
     def __init__(self, label):
@@ -17,9 +20,18 @@ class MyLabel:
 
 
 class ParentGraphsDataset(Dataset):
-    def __init__(self, root: str, raw_files: List[str], instances: List[str], use_instances: List[str], is_processed: bool = False,
-                 use_time: bool = False, pre_transform: SolutionTransformer = SolutionTransformer(),
-                 transform=None, pre_filter=None):
+    def __init__(
+        self,
+        root: str,
+        raw_files: List[str],
+        instances: List[str],
+        use_instances: List[str],
+        is_processed: bool = False,
+        use_time: bool = False,
+        pre_transform: SolutionTransformer = SolutionTransformer(),
+        transform=None,
+        pre_filter=None,
+    ):
         self.processed_files = []
         self.is_processed = is_processed
         self.parent_couple_idx = []
@@ -49,18 +61,32 @@ class ParentGraphsDataset(Dataset):
         return raw_data
 
     def process(self) -> None:
-
         # First get FullGraphs
         idx = 0
         for instance in self.instances:
-            edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos, client_time = self.pre_transform(instance_name=instance,
-                                                                                                                get_full_graph=True)
+            (
+                edge_index,
+                edge_weight,
+                client_features,
+                client_demand,
+                client_pos,
+                depot_pos,
+                client_time,
+            ) = self.pre_transform(instance_name=instance, get_full_graph=True)
 
-            data = FullGraph(edge_index, edge_weight, client_features, client_demand, client_pos, depot_pos, client_time)
+            data = FullGraph(
+                edge_index,
+                edge_weight,
+                client_features,
+                client_demand,
+                client_pos,
+                depot_pos,
+                client_time,
+            )
             data = normalize_graphs(data, TW=self.use_time)
             data = PE(data)
             max_distance = edge_weight.max().item()
-            file_name = f'FullGraph_{idx}.pt'
+            file_name = f"FullGraph_{idx}.pt"
             torch.save(data, osp.join(self.processed_dir, file_name))
             self.instance_dict[instance] = idx, max_distance
 
@@ -74,14 +100,13 @@ class ParentGraphsDataset(Dataset):
                 # process_whole_graph
                 route_instance = raw_data["instances"][batch]
 
-
                 if route_instance in self.use_instances:
                     # for getting the correct Full_graph
                     InstanceIdx = [self.instance_dict[route_instance][0]] * 12
                     self.instance_idx.extend(InstanceIdx)
 
                     # add couple labels
-                    self.parent_couple_idx.extend(raw_data['parent_couple_idx'][batch])
+                    self.parent_couple_idx.extend(raw_data["parent_couple_idx"][batch])
                     self.labels.extend(raw_data["labels"][batch])
                     self.accuracy.extend(raw_data["random_acc"][batch])
                     self.accuracy_limit.extend(raw_data["random_acc_limit"][batch])
@@ -92,14 +117,25 @@ class ParentGraphsDataset(Dataset):
                             idx = raw_data["parent_ids"][batch][i]
                             max_dis = self.instance_dict[route_instance][1]
                             InstanceIdx = self.instance_dict[route_instance][0]
-                            data = ParentGraph(*self.pre_transform(instance_name=route_instance,
-                                                                  get_full_graph=False, parent_solution=solution))
+                            data = ParentGraph(
+                                *self.pre_transform(
+                                    instance_name=route_instance,
+                                    get_full_graph=False,
+                                    parent_solution=solution,
+                                )
+                            )
 
-                            data = normalize_graphs(data, max_distance=max_dis, TW=self.use_time)
+                            data = normalize_graphs(
+                                data, max_distance=max_dis, TW=self.use_time
+                            )
 
-                            graph = torch.load(osp.join(self.processed_dir, f'FullGraph_{InstanceIdx}.pt'))
-                            data.x = torch.cat([data.x, graph.x[:,-k:]], dim=-1)
-                            file_name = f'ParentGraph_{idx}.pt'
+                            graph = torch.load(
+                                osp.join(
+                                    self.processed_dir, f"FullGraph_{InstanceIdx}.pt"
+                                )
+                            )
+                            data.x = torch.cat([data.x, graph.x[:, -k:]], dim=-1)
+                            file_name = f"ParentGraph_{idx}.pt"
                             self.processed_files.append(file_name)
                             torch.save(data, osp.join(self.processed_dir, file_name))
 
@@ -110,10 +146,10 @@ class ParentGraphsDataset(Dataset):
         p1_idx, p2_idx = self.parent_couple_idx[idx]
         instance_idx = self.instance_idx[idx]
 
-        p1_data = torch.load(osp.join(self.processed_dir, f'ParentGraph_{p1_idx}.pt'))
-        p2_data = torch.load(osp.join(self.processed_dir, f'ParentGraph_{p2_idx}.pt'))
+        p1_data = torch.load(osp.join(self.processed_dir, f"ParentGraph_{p1_idx}.pt"))
+        p2_data = torch.load(osp.join(self.processed_dir, f"ParentGraph_{p2_idx}.pt"))
 
-        #full_graph = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
+        # full_graph = torch.load(osp.join(self.processed_dir, f'FullGraph_{instance_idx}.pt'))
 
         label = self.labels[idx]
         # because of varying sizes of labels. The labels are put in dict so they can be stacked by dataloader
@@ -131,10 +167,10 @@ class ParentGraphsDataset(Dataset):
         pos_acc = len(torch.nonzero(torch.tensor(self.accuracy))) / len(self)
         lim_pos_acc = len(torch.nonzero(torch.tensor(self.accuracy_limit))) / len(self)
 
-        return ("\n"
-                F" random acc (pos):        {random_acc} \n"
-                F" lim random acc (pos):    {limit_acc} \n"
-                F" Parents with improv:     {pos_acc} \n"
-                F" lim Parent with improv:  {lim_pos_acc}")
-
-    
+        return (
+            "\n"
+            f" random acc (pos):        {random_acc} \n"
+            f" lim random acc (pos):    {limit_acc} \n"
+            f" Parents with improv:     {pos_acc} \n"
+            f" lim Parent with improv:  {lim_pos_acc}"
+        )
