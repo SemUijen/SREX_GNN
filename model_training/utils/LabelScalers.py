@@ -1,9 +1,6 @@
 import torch
 from torch import Tensor
-from typing import Tuple
 
-
-# TODO: add scalers for Sigmoid: Scale plus and minues seperatly between -10 and 10 +/-
 
 class SigmoidVectorizedScaler(object):
     """
@@ -13,11 +10,12 @@ class SigmoidVectorizedScaler(object):
     def __init__(self, scale_range, device):
         self.scale_range = scale_range
         self.device = device
+
     def scale(self, input_tensor: Tensor, pos: bool) -> Tensor:
         tensor = input_tensor.clone()
 
-        dist = (tensor.max().item() - tensor.min().item())
-        if dist == 0.:
+        dist = tensor.max().item() - tensor.min().item()
+        if dist == 0.0:
             return torch.zeros(tensor.shape, device=self.device)
 
         else:
@@ -27,7 +25,6 @@ class SigmoidVectorizedScaler(object):
             return tensor if pos else tensor - self.scale_range
 
     def __call__(self, input_tensor: Tensor) -> Tensor:
-
         tensor = input_tensor.clone()
 
         tensor_neg_idx = torch.where(tensor <= 0)
@@ -53,16 +50,11 @@ class SoftmaxVectorizedScaler(object):
         # TODO: Fix scale when there are no improvements LEADS TO PICKING ZERO as an improvement
         tensor = input_tensor.clone()
 
-        dist = (tensor.max(dim=0, keepdim=True)[0] - tensor.min(dim=0, keepdim=True)[0])
-        if dist == 0.:
+        dist = tensor.max(dim=0, keepdim=True)[0] - tensor.min(dim=0, keepdim=True)[0]
+        if dist == 0.0:
             return torch.zeros(tensor.shape)
 
         else:
             scale = 1.0 / dist
             tensor.mul_(scale).sub_(tensor.min(dim=0, keepdim=True)[0])
             return tensor
-
-
-
-
-
