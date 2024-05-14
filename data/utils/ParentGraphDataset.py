@@ -6,8 +6,7 @@ import torch
 from torch_geometric.data import Dataset
 from torch_geometric.transforms import AddLaplacianEigenvectorPE
 
-from data.utils import SolutionTransformer
-from data.utils.GraphData import FullGraph, ParentGraph
+from data.utils import FullGraph, ParentGraph, SolutionTransformer
 from data.utils.Normalize import normalize_graphs
 
 k = 6

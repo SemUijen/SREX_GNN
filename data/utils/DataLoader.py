@@ -8,7 +8,7 @@ from torch_geometric.data import Batch, Dataset
 from torch_geometric.data.data import BaseData
 from torch_geometric.data.datapipes import DatasetAdapter
 
-from data.utils.ParentGraphDataset import MyLabel
+from .ParentGraphDataset import MyLabel
 
 
 class MyCollater:
