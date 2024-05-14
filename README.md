@@ -7,15 +7,26 @@ This repository contains the code of my thesis, which delved into optimizing the
 
 ## Table of Content
 
-- [Summary of Research](#summary-of-research)
+- [Introduction](#introduction)
+- [Summary of Research Method](#summary-of-research)
 
+  - [Graph Features](#graph-features)
   - [The Proposed model](#the-proposed-model)
   - [The Node Embedding Transformations](#node-embedding-transformation)
 
+- [Conclusion](#conclusion)
 - [Usage Instruction](#usage-instructions)
 - [Code Documentation](#code-documentation)
 
+## Introduction
+
+In the works
+
 ## Summary of Research Method
+
+### Graph Features
+
+In the works
 
 ### The Proposed model
 
@@ -38,14 +49,24 @@ The output for a single input, shown in figure 2, is heatmap showing the estimat
 
 ### Node Embedding Transformation
 
+explaination: In the works
+
 <div class="container" align="center">
     <img src="images/method_images/NodeEmbeddingTransformation.png" />
-    <div class="overlay">Figure 3: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a single local selection</div>
+    <div class="overlay">Figure 3: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a selection of multiple routes</div>
 </div>
+
+## Conclusion
+
+In the works
 
 ## Usage Instructions
 
+In the works
+
 ## Code Documentation
+
+In the works
 
 [1]: https://doi.org/10.1016/j.cor.2021.105643
 [2]: https://github.com/PyVRP/PyVRP
