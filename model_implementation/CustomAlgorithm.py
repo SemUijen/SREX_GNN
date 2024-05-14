@@ -2,30 +2,31 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Collection, Tuple
+from typing import TYPE_CHECKING, Bool, Callable, Collection, Tuple
 
 from pyvrp.Result import Result
 from pyvrp.Statistics import Statistics
 
 if TYPE_CHECKING:
-    from pyvrp.PenaltyManager import PenaltyManager
-    from pyvrp.Population import Population
     from pyvrp._pyvrp import (
         CostEvaluator,
         ProblemData,
         RandomNumberGenerator,
         Solution,
     )
+    from pyvrp.PenaltyManager import PenaltyManager
+    from pyvrp.Population import Population
     from pyvrp.search.SearchMethod import SearchMethod
     from pyvrp.stop.StoppingCriterion import StoppingCriterion
 
 import torch
-from Models import SREXmodel
-from data.utils.GraphData import ParentGraph, FullGraph
-from implementation.customHGS.SolutionTransformer import SolutionTransformer
-from torch_geometric.transforms import AddLaplacianEigenvectorPE
-from data.utils.Normalize import normalize_graphs
+from SolutionTransformer import SolutionTransformer
 from torch_geometric.data import Batch
+from torch_geometric.transforms import AddLaplacianEigenvectorPE
+
+from data.utils.GraphData import FullGraph, ParentGraph
+from data.utils.Normalize import normalize_graphs
+from models import SREXmodel
 
 PE = AddLaplacianEigenvectorPE(6, attr_name=None, is_undirected=True)
 
@@ -100,28 +101,27 @@ class GeneticAlgorithm:
     """
 
     def __init__(
-            self,
-            data: ProblemData,
-            model: SREXmodel,
-            model_CostEvaluator: CostEvaluator,
-            full_graph: FullGraph,
-            penalty_manager: PenaltyManager,
-            rng: RandomNumberGenerator,
-            population: Population,
-            search_method: SearchMethod,
-            crossover_op: Callable[
-                [
-                    Tuple[Solution, Solution],
-                    ProblemData,
-                    CostEvaluator,
-                    RandomNumberGenerator,
-                ],
-                Solution,
+        self,
+        data: ProblemData,
+        model: SREXmodel,
+        model_CostEvaluator: CostEvaluator,
+        full_graph: FullGraph,
+        penalty_manager: PenaltyManager,
+        rng: RandomNumberGenerator,
+        population: Population,
+        search_method: SearchMethod,
+        crossover_op: Callable[
+            [
+                Tuple[Solution, Solution],
+                ProblemData,
+                CostEvaluator,
+                RandomNumberGenerator,
             ],
-            initial_solutions: Collection[Solution],
-            params: GeneticAlgorithmParams = GeneticAlgorithmParams(),
-            sol_transform: SolutionTransformer = SolutionTransformer(),
-
+            Solution,
+        ],
+        initial_solutions: Collection[Solution],
+        params: GeneticAlgorithmParams = GeneticAlgorithmParams(),
+        sol_transform: SolutionTransformer = SolutionTransformer(),
     ):
         if len(initial_solutions) == 0:
             raise ValueError("Expected at least one initial solution.")
@@ -187,12 +187,14 @@ class GeneticAlgorithm:
             if iters >= 5000:
                 configuration, boost = self.get_srex_config(parents)
 
-                offspring = self._crossover(parents, self._data, self._cost_evaluator,
-                                            self._rng, configuration)
+                offspring = self._crossover(
+                    parents, self._data, self._cost_evaluator, self._rng, configuration
+                )
                 self._improve_offspring(offspring, boost)
             else:
-                offspring = self._crossover(parents, self._data, self._cost_evaluator,
-                                            self._rng)
+                offspring = self._crossover(
+                    parents, self._data, self._cost_evaluator, self._rng
+                )
                 self._improve_offspring(offspring, False)
 
             new_best = self._cost_evaluator.cost(self._best)
@@ -230,10 +232,7 @@ class GeneticAlgorithm:
 
         # Possibly repair if current solution is infeasible. In that case, we
         # penalise infeasibility more using a penalty booster.
-        if (
-                not sol.is_feasible()
-                and self._rng.rand() < self._params.repair_probability
-        ):
+        if not sol.is_feasible() and self._rng.rand() < self._params.repair_probability:
             sol = self._search(sol, self._pm.get_booster_cost_evaluator())
 
             if sol.is_feasible():
@@ -243,19 +242,22 @@ class GeneticAlgorithm:
                 self._best = sol
 
     def get_srex_config(self, parents):
-
         parent1, parent2 = parents
 
-        p1_data = ParentGraph(*self._sol_transform(instance=self._data,
-                                                   get_full_graph=False,
-                                                   parent_solution=parent1))
+        p1_data = ParentGraph(
+            *self._sol_transform(
+                instance=self._data, get_full_graph=False, parent_solution=parent1
+            )
+        )
         p1_data = normalize_graphs(p1_data)
         p1_data.to("cuda")
         p1_data = PE(p1_data)
 
-        p2_data = ParentGraph(*self._sol_transform(instance=self._data,
-                                                   get_full_graph=False,
-                                                   parent_solution=parent2))
+        p2_data = ParentGraph(
+            *self._sol_transform(
+                instance=self._data, get_full_graph=False, parent_solution=parent2
+            )
+        )
         p2_data = normalize_graphs(p2_data)
         p2_data.to("cuda")
         p2_data = PE(p2_data)
@@ -272,7 +274,11 @@ class GeneticAlgorithm:
         self._model.eval()
         out, batch = self._model(p1_b, p2_b, fg_b, instance_batch, 1)
 
-        p1, p2, numMove = parent1.num_routes(), parent2.num_routes(), min(parent1.num_routes(), parent2.num_routes())
+        p1, p2, numMove = (
+            parent1.num_routes(),
+            parent2.num_routes(),
+            min(parent1.num_routes(), parent2.num_routes()),
+        )
 
         output_shaped = out.reshape(numMove, p1, p2)
         max_v = output_shaped.max()
@@ -281,22 +287,21 @@ class GeneticAlgorithm:
 
         if SREX_param[0].nelement() != 0:
             pos = self._rng.randint(SREX_param[0].nelement())
-            numMove, p1_idx, P2_idx = SREX_param[0][pos], SREX_param[1][pos], SREX_param[2][pos]
+            numMove, p1_idx, P2_idx = (
+                SREX_param[0][pos],
+                SREX_param[1][pos],
+                SREX_param[2][pos],
+            )
             return (p1_idx, P2_idx, numMove + 1), True
         elif torch.where(output_shaped > 0.3)[0].nelement() != 0:
             SREX_param = torch.where(output_shaped > 0.3)
             pos = self._rng.randint(SREX_param[0].nelement())
-            numMove, p1_idx, P2_idx = SREX_param[0][pos], SREX_param[1][pos], SREX_param[2][pos]
+            numMove, p1_idx, P2_idx = (
+                SREX_param[0][pos],
+                SREX_param[1][pos],
+                SREX_param[2][pos],
+            )
             return (p1_idx, P2_idx, numMove + 1), False
 
         else:
             return None, False
-
-
-
-
-
-
-
-
-
