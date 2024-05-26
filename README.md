@@ -8,7 +8,7 @@ This repository contains the code of my thesis, which delved into optimizing the
 ## Table of Content
 
 - [Abstract](#abstract)
-- [Summary of Research Method](#summary-of-research)
+- [Summary of Research Method](#summary-of-research-method)
 
   - [Graph Features](#graph-features)
   - [The Proposed model](#the-proposed-model)
