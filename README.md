@@ -38,7 +38,7 @@ Meaning, we found lower cost solutions in less iterations than HGS. We outperfor
 | **Edge Weight**                 | The cost ($c_{i,j}$) associated with an edge                  | `[num_edges, 1] `                |
 | **Node Features**               | Node feature matrix                                           | `[num_nodes, num_node_features]` |
 | Coordinates ($x_{i}, y_{i}$)    | Represents the position of customer $i$ on a coordinate graph | `[num_nodes, 2]`                 |
-| Timewindow {[}$a_{i}$, $b_{i}$] | The time interval customer $i$                                | `[num_nodes, 2]`                 |
+| Timewindow [ $a_{i}$, $b_{i}$ ] | The time interval customer $i$                                | `[num_nodes, 2]`                 |
 | Demand $d_{i}$\                 | The demand of customer $i$                                    | `[num_nodes, 1]`                 |
 | Service time $s_{i}$            | The service time of customer $i$                              | `[num_nodes, 1]`                 |
 | Vehicle capacity $Q$            | The demand capacity of vehicles for a given route instance    | `[num_nodes, 1]`                 |
