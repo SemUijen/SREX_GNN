@@ -30,6 +30,8 @@ Meaning, we found lower cost solutions in less iterations than HGS. We outperfor
 
 ### Introduction
 
+In the works
+
 ### Graph Features
 
 | **Graph Features**            | **Description**                                               | **Dimension**                    |
@@ -98,5 +100,3 @@ In the works
 [5]: https://arxiv.org/abs/1710.10903
 [6]: https://arxiv.org/abs/2003.00982
 [7]: https://arxiv.org/abs/2110.07875
-
-[8]:
