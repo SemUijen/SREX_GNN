@@ -20,16 +20,29 @@ This repository contains the code of my thesis, which delved into optimizing the
 
 ## Abstract
 
-In recent years, the paradigm Learn to Optimize is making strive in learning how to solve combinatorial optimization problem using machine learning. Most models still get out-performed by the state-of- the-art algorithms, so If you can’t beat them, why not just join them? \
+In recent years, the paradigm Learn to Optimize is making strive in learning how to solve combinatorial optimization problem using machine learning. Most models still get out-performed by the state-of-the-art algorithms, so If you can’t beat them, why not just join them? \
 Hybrid Genetic Search(HGS) is one of these state-of-the-art algorithms. Eventhough HGS is state-of-the-art, it still leaves room for increasing efficiency due to its many random aspects, among which is the crossover step. Many studies have used operator selection or parameter adaption methods to address this randomness. Doing direct local genetic selection is less studied.\
-To fill this gap, we propose NeuroSREX, which utilize Selective Route Exchange (SREX) and a Graph Neural Network (GNN) to select specific route(s) of each parent to crossover. While NeuroSREX is not yet practically viable due to difficulties in dealing with constraints and the added computation time, our results demonstrate the efficiency and effectiveness of our model.\
+To fill this gap, we propose NeuroSREX, which utilizes Selective Route Exchange (SREX) and a Graph Neural Network (GNN) to select specific route(s) of each parent to crossover. While NeuroSREX is not yet practically viable due to difficulties in dealing with constraints and the added computation time, our results demonstrate the efficiency and effectiveness of our model.\
 Meaning, we found lower cost solutions in less iterations than HGS. We outperformed HGS on a multitude of instances, taking the first step in the evolution of optimizing evolution.
 
 ## Summary of Research Method
 
+### Introduction
+
 ### Graph Features
 
-In the works
+| **Graph Features**                           | **Description**                                                                    | **Dimension**                         |
+| -------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
+| \textbf{Edge Index}                          | Graph connectivity in COO format                                                   | {[}2, num\_edges{]}                   |
+| \textbf{Edge Weight}                         | The cost ($c_{i,j}$)) associated with an edge                                      | {[}num\_edges, 1{]}                   |
+| \textbf{Node Features}                       | Node feature matrix                                                                | {[}num\_nodes, num\_node\_features{]} |
+| \textit{Coordinates ($x_{i}, y_{i}$)}        | Represents the position of customer $i$ on a coordinate graph                      | {[}num\_nodes, 2{]}                   |
+| \textit{Time_window {[}$a_{i}\, , b_{i}${]}} | The time interval customer $i$                                                     | {[}num\_nodes, 2{]}                   |
+| \textit{Demand $d_{i}$}                      | The demand of customer $i$                                                         | {[}num\_nodes, 1{]}                   |
+| \textit{Service time $s_{i}$}                | The service time of customer $i$                                                   | {[}num\_nodes, 1{]}                   |
+| \textit{Vehicle capacity $Q$}                | The demand capacity of vehicles for a given route instance                         | {[}num\_nodes, 1{]}                   |
+| \textit{Number of vehicles $K$}              | The number of vehicles for a given route instance                                  | {[}num\_nodes, 1{]}                   |
+| \textit{Positional Embeddings $p_i$}         | The LapPE\cite{Dwivedi2020} or RWPE\cite{Dwivedi2022} with number of dimension $k$ | {[}num\_nodes, $k${]}                 |
 
 ### The Proposed model
 
