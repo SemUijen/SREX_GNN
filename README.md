@@ -31,18 +31,18 @@ Meaning, we found lower cost solutions in less iterations than HGS. We outperfor
 
 ### Graph Features
 
-| **Graph Features**                           | **Description**                                                                    | **Dimension**                         |
-| -------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
-| \textbf{Edge Index}                          | Graph connectivity in COO format                                                   | {[}2, num\_edges{]}                   |
-| \textbf{Edge Weight}                         | The cost ($c_{i,j}$)) associated with an edge                                      | {[}num\_edges, 1{]}                   |
-| \textbf{Node Features}                       | Node feature matrix                                                                | {[}num\_nodes, num\_node\_features{]} |
-| \textit{Coordinates ($x_{i}, y_{i}$)}        | Represents the position of customer $i$ on a coordinate graph                      | {[}num\_nodes, 2{]}                   |
-| \textit{Time_window {[}$a_{i}\, , b_{i}${]}} | The time interval customer $i$                                                     | {[}num\_nodes, 2{]}                   |
-| \textit{Demand $d_{i}$}                      | The demand of customer $i$                                                         | {[}num\_nodes, 1{]}                   |
-| \textit{Service time $s_{i}$}                | The service time of customer $i$                                                   | {[}num\_nodes, 1{]}                   |
-| \textit{Vehicle capacity $Q$}                | The demand capacity of vehicles for a given route instance                         | {[}num\_nodes, 1{]}                   |
-| \textit{Number of vehicles $K$}              | The number of vehicles for a given route instance                                  | {[}num\_nodes, 1{]}                   |
-| \textit{Positional Embeddings $p_i$}         | The LapPE\cite{Dwivedi2020} or RWPE\cite{Dwivedi2022} with number of dimension $k$ | {[}num\_nodes, $k${]}                 |
+| **Graph Features**                     | **Description**                                               | **Dimension**                    |
+| -------------------------------------- | ------------------------------------------------------------- | -------------------------------- |
+| **Edge Index**                         | Graph connectivity in COO format                              | `[2, num_edges]`                 |
+| **Edge Weight**                        | The cost ($c_{i,j}$) associated with an edge                  | `[num_edges, 1] `                |
+| **Node Features**                      | Node feature matrix                                           | `[num_nodes, num_node_features]` |
+| _Coordinates ($x_{i}, y*{i}$)*         | Represents the position of customer $i$ on a coordinate graph | `[num_nodes, 2]`                 |
+| _Time*window {[}$a*{i}\, , b\_{i}${]}_ | The time interval customer $i$                                | `[num_nodes, 2]`                 |
+| _Demand $d_{i}$\_                      | The demand of customer $i$                                    | `[num_nodes, 1]`                 |
+| _Service time $s_{i}$\_                | The service time of customer $i$                              | `[num_nodes, 1]`                 |
+| _Vehicle capacity $Q$_                 | The demand capacity of vehicles for a given route instance    | `[num_nodes, 1]`                 |
+| _Number of vehicles $K$_               | The number of vehicles for a given route instance             | `[num_nodes, 1]`                 |
+| _Positional Embeddings $p_i$_          | The [LapPE][6] or [RWPE][7] with number of dimension $k$      | `[num_nodes, $k$]`               |
 
 ### The Proposed model
 
@@ -85,3 +85,5 @@ In the works
 [3]: https://pyvrp.org/setup/introduction_to_vrp.html
 [4]: https://pyvrp.org/setup/introduction_to_hgs.html
 [5]: https://arxiv.org/abs/1710.10903
+[6]: https://arxiv.org/abs/2003.00982
+[7]: https://arxiv.org/abs/2110.07875
