@@ -7,7 +7,7 @@ This repository contains the code of my thesis, which delved into optimizing the
 
 ## Table of Content
 
-- [Introduction](#introduction)
+- [Abstract](#abstract)
 - [Summary of Research Method](#summary-of-research)
 
   - [Graph Features](#graph-features)
@@ -18,9 +18,12 @@ This repository contains the code of my thesis, which delved into optimizing the
 - [Usage Instruction](#usage-instructions)
 - [Code Documentation](#code-documentation)
 
-## Introduction
+## Abstract
 
-In the works
+In recent years, the paradigm Learn to Optimize is making strive in learning how to solve combinatorial optimization problem using machine learning. Most models still get out-performed by the state-of- the-art algorithms, so If you can’t beat them, why not just join them? \
+Hybrid Genetic Search(HGS) is one of these state-of-the-art algorithms. Eventhough HGS is state-of-the-art, it still leaves room for increasing efficiency due to its many random aspects, among which is the crossover step. Many studies have used operator selection or parameter adaption methods to address this randomness. Doing direct local genetic selection is less studied.\
+To fill this gap, we propose NeuroSREX, which utilize Selective Route Exchange (SREX) and a Graph Neural Network (GNN) to select specific route(s) of each parent to crossover. While NeuroSREX is not yet practically viable due to difficulties in dealing with constraints and the added computation time, our results demonstrate the efficiency and effectiveness of our model.\
+Meaning, we found lower cost solutions in less iterations than HGS. We outperformed HGS on a multitude of instances, taking the first step in the evolution of optimizing evolution.
 
 ## Summary of Research Method
 
@@ -61,10 +64,6 @@ explaination: In the works
 In the works
 
 ## Usage Instructions
-
-In the works
-
-## Code Documentation
 
 In the works
 
