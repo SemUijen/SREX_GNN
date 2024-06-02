@@ -76,7 +76,7 @@ Figure 1 illustrates the model proposed in this thesis. The architecture compris
 </br>
 The single input for the model consists of three different graphs: Parent-1 and Parent-2 which both represent a single solution to a VRP-problems, and the Full Graph which represent the whole VRP-problem graph(i.e. all edges and nodes of the problem).
 
-The output for a single input, shown in figure 2, is heatmap showing the estimated best configuration of the Selective Route Exchange Crossover function given Parent-1 and Parent-2.
+The output, shown in figure 2, is heatmap showing the estimated quality of configurations of the Selective Route Exchange Crossover function given Parent-1 and Parent-2.
 
 <div class="container" align="center">
     <img width=550 src="images/model_result_plots/PlottedResults_Working_1.png" />
@@ -86,11 +86,21 @@ The output for a single input, shown in figure 2, is heatmap showing the estimat
 
 ### Node Embedding Transformation
 
-explaination: In the works
+Following the GAT layers, node representations are obtained. However, to predict the routes that should be switched between parents (configuration of SREX parameters) to find a better offspring, these embeddings need to be transformed to reflect this interaction. A diagram illustrating these transformation is shown in figure 3.\
+In this section, we briefly explain the steps taken to calculate the embeddings for all configurations of the SREX parameters.
+
+> [!NOTE]
+> For how the steps are implemented to minimize added computation, we refer to the [source][10] code
+
+The initial step involves aggregating the node embedding into an embedding for each route for both Parent $A$ and $B$, where the total number of routes for a parent is $R$. This aggregation is achieved by summing and then averaging all node embeddings that belong to the same route. This results in a representation for the route of Parent A and B with dimension [$R_a$, $h$] and [$R_b$, $h$] respectively.\
+Since SREX switches one or more routes ($R_{move}$), the subsequent step is to aggregate each route embedding to the sum of ordered routes within the range of 1 to $R_{move}$.\
+Subsequently, there are also routes that aren't used for the crossover. For each configuration, we also aggregated the route that aren't used and concatenate them with the aggration of routes used. This results in an embedding for each configuration(i.e. `starting_index` of that parent and `num_routes_moved`) of a single parent with dimensions [$R_a$ * $\max (R_{a}, R_b)$, $2*h$].\
+Finally, to enable a comparison between Parent $A$ and $B$, the embeddings need to be combined. This is accomplished by concatenating the embeddings that have the same number of routes moved, because the number of routes selected(`num_routes_moved`) is always the same for both parents. The result is a representation for every SREX configuration given two parents, with dimensions
+[$R_{a}$ * $R_{b}$ * $\max (R_{a}, R_b)$, 4 * $h$]\\
 
 <div class="container" align="center">
     <img src="images/method_images/NodeEmbeddingTransformation.png" />
-    <div class="overlay">Figure 3: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a selection of multiple routes</div>
+    <div class="overlay">Figure 3: Diagram of Embedding Transformations: Each color represent a single h-dimensional embedding representing a node, route or a single configuration(i.e. routes (not) selected for crossover from both parents)</div>
 </div>
 
 ## Conclusion
@@ -116,3 +126,4 @@ To create practical viability, we recommend the following steps for future work 
 [7]: https://arxiv.org/abs/2110.07875
 [8]: https://link.springer.com/chapter/10.1007/978-3-642-15844-5_54
 [9]: https://github.com/PyVRP/PyVRP//blob/a860efe/pyvrp/crossover/selective_route_exchange.py#L13
+[10]: https://github.com/SemUijen/SREX_GNN/blob/main/models/utils/node_embedding_transformations.py
