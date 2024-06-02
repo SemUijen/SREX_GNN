@@ -17,7 +17,6 @@ This repository contains the code of my thesis, which delved into optimizing the
 
 - [Conclusion](#conclusion)
 - [Future Work](#future-work)
-- [Usage Instruction](#usage-instructions)
 
 ## Abstract
 
@@ -30,7 +29,19 @@ Meaning, we found lower cost solutions in less iterations than HGS. We outperfor
 
 ### Introduction
 
-In the works
+The proposed methodology for optimizing the evolution strategy of HGS consists of two parts: The model prediction of the correct configuration of [Selective Route Exchange crossover][8] (SREX) parameters and the model implementation in HGS. This section briefly discusses how each part is set up.\
+SREX crossover operator \
+
+```python
+selective_route_exchange(
+    parents: tuple[Solution, Solution],
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    rng: RandomNumberGenerator
+) → Solution ¶
+```
+
+The combination of fast-explorative evolutionary search and the aggressive-improvement capabilities of local search is a significant part of HGS performance. Implementing a model for the evolutionary search (i.e. SREX) will add computational overhead to an otherwise very fast step. Therefore, an implementation should try to minimize the computational overhead.
 
 ### Graph Features
 
@@ -89,10 +100,6 @@ To create practical viability, we recommend the following steps for future work 
 
 - If the aforementioned steps result in practical viability for instances with less challenging constraints, subsequent research efforts should focus on developing methods to incorporate the capability to handle more complex constraints.
 
-## Usage Instructions
-
-In the works
-
 [1]: https://doi.org/10.1016/j.cor.2021.105643
 [2]: https://github.com/PyVRP/PyVRP
 [3]: https://pyvrp.org/setup/introduction_to_vrp.html
@@ -100,3 +107,5 @@ In the works
 [5]: https://arxiv.org/abs/1710.10903
 [6]: https://arxiv.org/abs/2003.00982
 [7]: https://arxiv.org/abs/2110.07875
+[8]: https://link.springer.com/chapter/10.1007/978-3-642-15844-5_54
+[9]: https://github.com/PyVRP/PyVRP//blob/a860efe/pyvrp/crossover/selective_route_exchange.py#L13
