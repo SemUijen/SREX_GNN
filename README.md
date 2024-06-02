@@ -80,7 +80,7 @@ The output, shown in figure 2, is heatmap showing the estimated quality of confi
 
 <div class="container" align="center">
     <img width=550 src="images/model_result_plots/PlottedResults_Working_1.png" />
-    <div class="overlay">Figure 2: Heatmap of estimated best configurations of SREX-crossover for a single crossover</div>
+    <div class="overlay">Figure 2: Heatmap of estimated quality configurations of SREX-crossover for a single crossover</div>
 </div>
 </br>
 
@@ -90,9 +90,9 @@ Following the GAT layers, node representations are obtained. However, to predict
 In this section, we briefly explain the steps taken to calculate the embeddings for all configurations of the SREX parameters.
 
 > [!NOTE]
-> For how the steps are implemented to minimize added computation, we refer to the [source][10] code
+> For how the steps are implemented to minimize added computation time, we refer to the [source][10] code
 
-The initial step involves aggregating the node embedding into an embedding for each route for both Parent $A$ and $B$, where the total number of routes for a parent is $R$. This aggregation is achieved by summing and then averaging all node embeddings that belong to the same route. This results in a representation for the route of Parent A and B with dimension [$R_a$, $h$] and [$R_b$, $h$] respectively.\
+The initial step involves aggregating the node embedding into an embedding for each route for both Parent $A$ and $B$, where the total number of routes for a parent is $R$. This aggregation is achieved by summing and then averaging all node embeddings that belong to the same route. This results in a representation for the route of Parent A and B with dimension [ $R_a$, $h$ ] and [ $R_b$, $h$] respectively.\
 Since SREX switches one or more routes ($R_{move}$), the subsequent step is to aggregate each route embedding to the sum of ordered routes within the range of 1 to $R_{move}$.\
 Subsequently, there are also routes that aren't used for the crossover. For each configuration, we also aggregated the route that aren't used and concatenate them with the aggration of routes used. This results in an embedding for each configuration(i.e. `starting_index` of that parent and `num_routes_moved`) of a single parent with dimensions [$R_a$ * $\max (R_{a}, R_b)$, $2*h$].\
 Finally, to enable a comparison between Parent $A$ and $B$, the embeddings need to be combined. This is accomplished by concatenating the embeddings that have the same number of routes moved, because the number of routes selected(`num_routes_moved`) is always the same for both parents. The result is a representation for every SREX configuration given two parents, with dimensions
