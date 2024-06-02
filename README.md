@@ -29,19 +29,26 @@ Meaning, we found lower cost solutions in less iterations than HGS. We outperfor
 
 ### Introduction
 
-The proposed methodology for optimizing the evolution strategy of HGS consists of two parts: The model prediction of the correct configuration of [Selective Route Exchange crossover][8] (SREX) parameters and the model implementation in HGS. This section briefly discusses how each part is set up.\
-SREX crossover operator \
+The proposed methodology for optimizing the evolution strategy of HGS consists of two parts: The model's prediction of the correct configuration of [Selective Route Exchange crossover][8] (SREX) parameters and the model implementation in HGS. This section briefly discusses how each part is set up.\
+The combination of fast-explorative evolutionary search and the aggressive-improvement capabilities of local search is a significant part of HGS performance. Implementing a model for the evolutionary search (i.e. SREX) will add computational overhead to an otherwise very fast step. Therefore, an implementation should not only have good predictions, but should also try to minimize the computational overhead.
+
+### Selective Route Exchange (SREX)
+
+SREX crossover operator combines routes from both parents to generate a new offspring solution. It does this by carefully selecting routes from the second parent that could be exchanged with routes from the first parent. This often results in incomplete offspring that can then be repaired using a search method.\
+The code below show the parameters used by the [PyVRP implementation][9]. The `start_indices` and `num_moved_routes` determine which routes of parent 1 and 2 are used for the crossover. These parameters are selected randomly, which is what makes the genetic search fast.
 
 ```python
-selective_route_exchange(
+def selective_route_exchange(
     parents: tuple[Solution, Solution],
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    rng: RandomNumberGenerator
-) → Solution ¶
+    start_indices: tuple[int, int],
+    num_moved_routes: int,
+) -> Solution
 ```
 
-The combination of fast-explorative evolutionary search and the aggressive-improvement capabilities of local search is a significant part of HGS performance. Implementing a model for the evolutionary search (i.e. SREX) will add computational overhead to an otherwise very fast step. Therefore, an implementation should try to minimize the computational overhead.
+> [!NOTE]
+> The proposed model of this thesis will make a prediction for all configurations of `start_indices` and `num_moved_routes` given two parents. The best configuration is then selected.
 
 ### Graph Features
 
@@ -56,7 +63,7 @@ The combination of fast-explorative evolutionary search and the aggressive-impro
 | Service time $s_{i}$          | The service time of customer $i$                              | `[num_nodes, 1]`                 |
 | Vehicle capacity $Q$          | The demand capacity of vehicles for a given route instance    | `[num_nodes, 1]`                 |
 | Number of vehicles $K$        | The number of vehicles for a given route instance             | `[num_nodes, 1]`                 |
-| Positional Embeddings $p_i$   | The [LapPE][6] or [RWPE][7] with number of dimension $k$      | `[num_nodes, $k$]`               |
+| Positional Embeddings $p_i$   | The [LapPE][6] or [RWPE][7] with number of dimension $k$      | `[num_nodes, k]`                 |
 
 ### The Proposed model
 
