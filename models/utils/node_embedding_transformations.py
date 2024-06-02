@@ -1,28 +1,72 @@
 import torch
 from torch import Tensor
 
+from data.utils import ParentGraph
+
 
 def transform_to_route(
-    graph_data, embeddings, batch_indices, batch_idx, device
+    graph_data: ParentGraph,
+    embeddings: Tensor,
+    batch_indices: Tensor,
+    batch_idx: Tensor,
+    device,
 ) -> Tensor:
+    """Transforms the node embeddings to route embeddings
+
+    Args:
+        graph_data::[ParentGraph]
+            Contains the graph features of a parent which contains the "client_route_vector" needed for the implementation
+        embeddings::[Tensor]
+            The node embeddings of a parent after the GAT layers
+        batch_indices::[Tensor]
+            The indices of nodes being part of parent x in a batch, needed to do batch calculations
+        batch_idx::[Tensor]
+            The current batch being calculated
+        device
+            if model is run on CUDA or CPU
+
+    Returns:
+        route_embedding::[Tensor]
+            The route_embeddings of all parents in the batch
+    """
+
+    # the node_to_route_vector contains the route each node belongs to (e.g. [0,1,1,2])
     node_to_route_vector = graph_data.client_route_vector[batch_indices == batch_idx]
     number_of_customers = torch.tensor(len(node_to_route_vector))
     node_to_route_matrix = torch.zeros(
         number_of_customers, graph_data.num_routes[batch_idx], device=device
     )
+
+    # Create the node_to_route matrix [nr_nodes, nr_routes] by assigning 1 where node is in route
     node_to_route_matrix[
         torch.arange(number_of_customers).long(), node_to_route_vector.long()
     ] = 1
+
+    # Step 3: Multiply node embeddings by transposed node_to_route_matrix to create routes embeddings
     route_embedding = torch.matmul(
         node_to_route_matrix.t(), embeddings[batch_indices == batch_idx]
     )
 
+    # step 4: Average embeddings by amount of nodes(stops) in a route
     nodes_per_route = torch.sum(node_to_route_matrix.t(), 1).unsqueeze(-1)
     route_embedding = route_embedding / nodes_per_route
+
     return route_embedding
 
 
-def transform_to_nrRoutes(route_embeddings, max_move, device):
+def transform_to_nrRoutes(route_embeddings: Tensor, max_move: Tensor, device):
+    """Transforms the route embeddings to sum of routes
+
+    Args:
+        route_embeddings::[Tensor]
+            The embeddings for each route in a parent
+        max_moved::[Tensor]
+            The maximum number of routes to moved (max number of routes of one of the parents)
+        device
+            if model is run on CUDA or CP
+
+    """
+
     embedding_dim = route_embeddings.shape[1]
     num_routes = route_embeddings.shape[0]
 
